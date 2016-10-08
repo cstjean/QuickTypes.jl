@@ -76,8 +76,8 @@ function qexpansion(def, mutable)
                        $name{$(type_vars...)}($(o_constr_args...)))) :
                     nothing)
     esc(Expr(:toplevel,
-             Expr(:type, mutable, Expr(:<:, typ, parent_type),
-                  Expr(:block, fields..., inner_constr)),
+             :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
+                                    Expr(:block, fields..., inner_constr)))),
              outer_constr))
 end
 
