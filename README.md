@@ -7,9 +7,11 @@
 [![codecov.io](http://codecov.io/github/cstjean/QuickTypes.jl/coverage.svg?branch=master)](http://codecov.io/github/cstjean/QuickTypes.jl?branch=master)
 
 `QuickTypes.@qtype` and `@qimmutable` are macros for defining types more
-concisely, by writing down the constructor.
+concisely, by writing down their constructor.
 
 ```julia
+Pkg.clone("https://github.com/cstjean/QuickTypes.jl.git") # to install
+
 using QuickTypes
 
 @qtype Window(price::Int, color=:black; opacity::Float64=1.0)
@@ -48,3 +50,6 @@ end
 Car{T <: Number,U}(size::T,nwheels::Int=4; manufacturer::U=nothing,brand::String="off-brand") =
     Car{T,U}(size,nwheels; manufacturer=manufacturer,brand=brand))
 ```
+
+See also [Parameters.jl](https://github.com/mauro3/Parameters.jl) for a similar
+macro, with a different syntax.
