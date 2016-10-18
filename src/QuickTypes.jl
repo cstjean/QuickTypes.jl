@@ -39,7 +39,7 @@ function qexpansion(def, mutable)
         e.args[1]
     end
     get_sym(e::Symbol) = e
-    fields = Any[]
+    fields = Any[]; kwfields = Any[]
     constr_args = Any[]; constr_kwargs = Any[]
     o_constr_args = Any[]; o_constr_kwargs = Any[]
     new_args = Symbol[]
@@ -58,7 +58,7 @@ function qexpansion(def, mutable)
         end
     end
     for kwarg in kwargs  # keyword arguments
-        push!(fields, kwarg.args[1])
+        push!(kwfields, kwarg.args[1])
         fsym = get_sym(kwarg.args[1])::Symbol
         push!(constr_kwargs, Expr(:kw, fsym, kwarg.args[2]))
         push!(new_args, fsym)
@@ -75,10 +75,32 @@ function qexpansion(def, mutable)
                      :($typ_def =
                        $name{$(type_vars...)}($(o_constr_args...)))) :
                     nothing)
+    # The Base.show function for that type
+    show_expr = :(function Base.show(io::IO, obj::$name)
+        print(io, typeof(obj))
+        write(io, "(")
+        # Positional args
+        $([:(show(io, obj.$(get_sym(field)));
+             # Print comma. I would prefer printing ", " but that's not
+             # what Julia 0.5 does.
+             $(field==last(fields) ? nothing : :(write(io, ","))))
+           for field in fields]...)
+        # separating semicolon
+        $(if !isempty(kwfields)
+            :(write(io, ";")) end)
+        # Keyword args
+        $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
+             show(io, obj.$(get_sym(kwfield)));
+             $(kwfield==last(kwfields) ? nothing : :(write(io, ","))))
+           for kwfield in kwfields]...)
+        write(io, ")")
+        end)
     esc(Expr(:toplevel,
              :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
-                                    Expr(:block, fields..., inner_constr)))),
-             outer_constr))
+                                    Expr(:block, fields..., kwfields...,
+                                         inner_constr)))),
+             outer_constr,
+             show_expr))
 end
 
 
