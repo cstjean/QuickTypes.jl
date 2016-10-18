@@ -14,15 +14,16 @@ Pkg.clone("https://github.com/cstjean/QuickTypes.jl.git") # to install
 
 using QuickTypes
 
+@qtype Door(width, height)
 @qtype Window(price::Int, color=:blue; opacity::Float64=1.0)
 
 Window(100; opacity=0.2)    # yields Window(100,:blue;opacity=0.2)
 ```
 
-The constructor macroexpands into:
+It macroexpands into:
 
 ```julia
-type Window <: Any
+type Window
     price::Int
     color
     opacity::Float64
@@ -31,7 +32,7 @@ type Window <: Any
 end
 ```
 
-It also supports parametric types and inheritance:
+`@qtype` and `@qimmutable` also support parametric types and inheritance:
 
 ```julia
 abstract Vehicle
