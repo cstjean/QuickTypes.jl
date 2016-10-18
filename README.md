@@ -14,10 +14,12 @@ Pkg.clone("https://github.com/cstjean/QuickTypes.jl.git") # to install
 
 using QuickTypes
 
-@qtype Window(price::Int, color=:black; opacity::Float64=1.0)
+@qtype Window(price::Int, color=:blue; opacity::Float64=1.0)
+
+Window(100; opacity=0.2)    # yields Window(100,:blue;opacity=0.2)
 ```
 
-is equivalent to:
+The constructor macroexpands into:
 
 ```julia
 type Window <: Any
@@ -37,19 +39,7 @@ abstract Vehicle
 @qtype Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
                          brand::String="off-brand") <: Vehicle
 
-# expands into:
-
-type Car{T <: Number,U} <: Vehicle
-    size::T
-    nwheels::Int
-    manufacturer::U
-    brand::String
-    Car(size,nwheels=4; manufacturer=nothing,brand="off-brand") = 
-        new(size,nwheels,manufacturer,brand)
-end
-Car{T <: Number,U}(size::T,nwheels::Int=4; manufacturer::U=nothing,brand::String="off-brand") =
-    Car{T,U}(size,nwheels; manufacturer=manufacturer,brand=brand))
+Car(300, 6; manufacturer=:Toyota)  # yields Car{Int64,Symbol}(300,6;manufacturer=:Toyota,brand="off-brand")
 ```
 
-See also [Parameters.jl](https://github.com/mauro3/Parameters.jl) for a similar
-macro, with a different syntax.
+See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
