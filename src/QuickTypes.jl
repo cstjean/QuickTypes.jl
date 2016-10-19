@@ -104,7 +104,7 @@ function qexpansion(def, mutable)
 end
 
 
-""" Quick type definition. This:
+""" Quick type definition. 
 
 ```julia
 @qtype Car(size, nwheels::Int=4; brand::String="unnamed") <: Vehicle
@@ -120,6 +120,8 @@ type Car <: Vehicle
     Car(size, nwheels=4; brand="unnamed") = new(size, nwheels, brand)
 end
 ```
+
+Also supports parametric types: `@qtype Door{T}(size::T)`
 """
 macro qtype(def)
     return qexpansion(def, true)

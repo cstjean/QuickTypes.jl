@@ -6,8 +6,8 @@
 
 [![codecov.io](http://codecov.io/github/cstjean/QuickTypes.jl/coverage.svg?branch=master)](http://codecov.io/github/cstjean/QuickTypes.jl?branch=master)
 
-`QuickTypes.@qtype` and `@qimmutable` are macros for defining types more
-concisely, by writing down their constructor.
+`QuickTypes.@qtype` and `@qimmutable` are macros for concisely defining types,
+by writing their constructor.
 
 ```julia
 Pkg.clone("https://github.com/cstjean/QuickTypes.jl.git") # to install
@@ -27,7 +27,7 @@ type Window
     price::Int
     color
     opacity::Float64
-    Window(price,color=:black; opacity=1.0)
+    Window(price,color=:black; opacity=1.0) =
         new(price,color,opacity)
 end
 ```
