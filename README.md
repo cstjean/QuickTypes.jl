@@ -10,7 +10,7 @@
 by writing their constructor.
 
 ```julia
-Pkg.clone("https://github.com/cstjean/QuickTypes.jl.git") # to install
+Pkg.add("QuickTypes")    # to install
 
 using QuickTypes
 
