@@ -1,9 +1,29 @@
+__precompile__()
+
 module QuickTypes
 
 using MacroTools: @capture
 
 export @qtype, @qimmutable
 
+# These are not exported for now, because they are rather specific extensions.
+""" For a type X defined with `@qtype/@qimmutable` and with fields `a, b, c,
+...`, `QuickTypes.construct(X, 1, 2, 3...)` is a purely-positional constructor
+of `X`. This is useful for writing generic structure traversal. For any object
+of a type defined by `@qimmutable`, this holds:
+
+    QuickTypes.construct(QuickTypes.roottypeof(o), QuickTypes.fieldsof(o)...) == o
+ """
+function construct end
+
+""" `roottypeof(obj)` returns the type of obj with generic parametric types,
+for types defined with QuickTypes. Eg.
+`roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
+function roottypeof end
+
+""" `fieldsof(obj)` returns the fields of `obj` in a tuple, for types defined
+with QuickTypes. See `QuickTypes.construct` """
+function fieldsof end
 
 """ `parse_funcall(fcall)`
 
@@ -95,11 +115,27 @@ function qexpansion(def, mutable)
            for kwfield in kwfields]...)
         write(io, ")")
         end)
+    type_def =
+        :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
+                               Expr(:block, fields..., kwfields...,
+                                    inner_constr))))
+    construct_sign = :($QuickTypes.construct(::Type{$name}, $(new_args...)))
+    construct_def = (length(o_constr_kwargs) > 0 ?
+                     :($construct_sign = $name($(o_constr_args...);
+                                               $(o_constr_kwargs...))) :
+                     # Special-casing necessary because of julialang#18845
+                     :($construct_sign = $name($(o_constr_args...))))
+    # fieldsof and roottypeof could be defined as generated functions
+    fieldsof_def = :($QuickTypes.fieldsof(obj::$name) =
+                     ($([:(obj.$(get_sym(field)))
+                         for field in vcat(fields, kwfields)]...),))
+    roottypeof_def = :($QuickTypes.roottypeof(obj::$name) = $name)
     esc(Expr(:toplevel,
-             :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
-                                    Expr(:block, fields..., kwfields...,
-                                         inner_constr)))),
+             type_def,
              outer_constr,
+             construct_def,
+             fieldsof_def,
+             roottypeof_def,
              show_expr))
 end
 

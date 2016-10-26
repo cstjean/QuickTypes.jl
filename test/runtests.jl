@@ -1,9 +1,10 @@
 using QuickTypes
+using QuickTypes: construct, roottypeof, fieldsof
 using Base.Test
 
 abstract Vehicle
 
-@qtype Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
+@qimmutable Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
                          brand::String="off-brand") <: Vehicle
 
 c = Car(10; manufacturer=("Danone", "Hershey"))
@@ -14,6 +15,8 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 @test c.brand=="off-brand"
 # Check that the fields are in the right order
 @test fieldnames(c) == [:size, :nwheels, :manufacturer, :brand]
+# This is essentially the definition of these functions.
+@test construct(roottypeof(c), fieldsof(c)...) == c
 
 ################################################################################
 
