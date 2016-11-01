@@ -77,9 +77,14 @@ function qexpansion(def, mutable)
             push!(o_constr_args, get_sym(arg))
         end
     end
+    define_show = true
     for kwarg in kwargs  # keyword arguments
-        push!(kwfields, kwarg.args[1])
         fsym = get_sym(kwarg.args[1])::Symbol
+        if fsym == :_define_show
+            define_show = kwarg.args[2]::Bool
+            continue
+        end
+        push!(kwfields, kwarg.args[1])
         push!(constr_kwargs, Expr(:kw, fsym, kwarg.args[2]))
         push!(new_args, fsym)
         push!(o_constr_kwargs, Expr(:kw, fsym, fsym))
@@ -96,25 +101,29 @@ function qexpansion(def, mutable)
                        $name{$(type_vars...)}($(o_constr_args...)))) :
                     nothing)
     # The Base.show function for that type
-    show_expr = :(function Base.show(io::IO, obj::$name)
-        print(io, typeof(obj))
-        write(io, "(")
-        # Positional args
-        $([:(show(io, obj.$(get_sym(field)));
-             # Print comma. I would prefer printing ", " but that's not
-             # what Julia 0.5 does.
-             $(field==last(fields) ? nothing : :(write(io, ","))))
-           for field in fields]...)
-        # separating semicolon
-        $(if !isempty(kwfields)
-            :(write(io, ";")) end)
-        # Keyword args
-        $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
-             show(io, obj.$(get_sym(kwfield)));
-             $(kwfield==last(kwfields) ? nothing : :(write(io, ","))))
-           for kwfield in kwfields]...)
-        write(io, ")")
+    if define_show
+        show_expr = :(function Base.show(io::IO, obj::$name)
+            print(io, typeof(obj))
+            write(io, "(")
+            # Positional args
+            $([:(show(io, obj.$(get_sym(field)));
+                 # Print comma. I would prefer printing ", " but that's not
+                 # what Julia 0.5 does.
+                 $(field==last(fields) ? nothing : :(write(io, ","))))
+               for field in fields]...)
+            # separating semicolon
+            $(if !isempty(kwfields)
+                :(write(io, ";")) end)
+            # Keyword args
+            $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
+                 show(io, obj.$(get_sym(kwfield)));
+                 $(kwfield==last(kwfields) ? nothing : :(write(io, ","))))
+               for kwfield in kwfields]...)
+            write(io, ")")
         end)
+    else
+        show_expr = nothing
+    end
     type_def =
         :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
@@ -136,7 +145,8 @@ function qexpansion(def, mutable)
              construct_def,
              fieldsof_def,
              roottypeof_def,
-             show_expr))
+             show_expr,
+             nothing))
 end
 
 
@@ -157,7 +167,10 @@ type Car <: Vehicle
 end
 ```
 
-Also supports parametric types: `@qtype Door{T}(size::T)`
+Also supports parametric types: `@qtype Door{T}(size::T)`.
+
+Note: `@qtype` automatically defines a `Base.show` method for the new type,
+unless `_define_show=false` (eg. `@qtype(x, y; _define_show=false)`).
 """
 macro qtype(def)
     return qexpansion(def, true)
