@@ -30,6 +30,11 @@ abstract Tree
 
 # Immutables work the same way
 @qimmutable SquaredNumber(x2::Number)
+
+# Arguments can be validated with do-syntax
+@qimmutable Human(name, height::Float64) do
+    @assert height > 0    # arbitrary code, executed before creating the object
+end
 ```
 
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).

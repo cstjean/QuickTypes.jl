@@ -27,3 +27,11 @@ Empty()
 
 @qimmutable Kwaroo(x; y=10)
 @test Kwaroo(5) == Kwaroo(5; y=10)
+
+################################################################################
+
+@qtype Foo{T}(x::T, y) do
+    @assert x < 10
+end
+
+@test_throws AssertionError Foo(11, 10.0)

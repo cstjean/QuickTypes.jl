@@ -45,6 +45,12 @@ function qexpansion(def, mutable)
         parent_type = :Any
     end
     typ, args, kwargs = parse_funcall(typ_def)
+    if !isempty(args) && @capture(args[1], ()->constraints_)
+        args = args[2:end]
+        typ_def = :($typ($(args...); $(kwargs...)))
+    else
+        constraints = nothing
+    end
     get_type_var(v::Symbol) = v
     get_type_var(e::Expr) = e.args[1]
     if @capture(typ, name_{type_params__})
@@ -89,8 +95,12 @@ function qexpansion(def, mutable)
         push!(new_args, fsym)
         push!(o_constr_kwargs, Expr(:kw, fsym, fsym))
     end
-    inner_constr = :($name($(constr_args...); $(constr_kwargs...)) =
-                     new($(new_args...)))
+    inner_constr = quote
+        function $name($(constr_args...); $(constr_kwargs...))
+            $constraints
+            return new($(new_args...))
+        end
+    end
     outer_constr = (parametric ?
                     (length(o_constr_kwargs) > 0 ?
                      :($typ_def =
