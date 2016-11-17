@@ -183,7 +183,12 @@ type Car <: Vehicle
 end
 ```
 
-Also supports parametric types: `@qtype Door{T}(size::T)`.
+Also supports parametric types: `@qtype Door{T}(size::T)`. Invariants can be enforced using do-syntax:
+```julia
+@qimmutable Human(name, height::Float64) do
+    @assert height > 0    # arbitrary code, executed before creating the object
+end
+```
 
 Note: `@qtype` automatically defines a `Base.show` method for the new type,
 unless `_define_show=false` (eg. `@qtype(x, y; _define_show=false)`).
