@@ -16,14 +16,21 @@ of a type defined by `@qimmutable`, this holds:
  """
 function construct end
 
+
 """ `roottypeof(obj)` returns the type of obj with generic parametric types,
 for types defined with QuickTypes. Eg.
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
 function roottypeof end
 
-""" `fieldsof(obj)` returns the fields of `obj` in a tuple, for types defined
-with QuickTypes. See `QuickTypes.construct` """
-function fieldsof end
+
+""" `fieldsof(obj)` returns the fields of `obj` in a tuple.
+See also `QuickTypes.construct` """
+@generated function fieldsof(obj)
+    :(tuple($([:(obj.$field)
+        for field in fieldnames(obj)]...)))
+end
+
+################################################################################
 
 """ `parse_funcall(fcall)`
 
@@ -144,16 +151,11 @@ function qexpansion(def, mutable)
                                                $(o_constr_kwargs...))) :
                      # Special-casing necessary because of julialang#18845
                      :($construct_sign = $name($(o_constr_args...))))
-    # fieldsof and roottypeof could be defined as generated functions
-    fieldsof_def = :($QuickTypes.fieldsof(obj::$name) =
-                     ($([:(obj.$(get_sym(field)))
-                         for field in vcat(fields, kwfields)]...),))
     roottypeof_def = :($QuickTypes.roottypeof(obj::$name) = $name)
     esc(Expr(:toplevel,
              type_def,
              outer_constr,
              construct_def,
-             fieldsof_def,
              roottypeof_def,
              show_expr,
              nothing))
