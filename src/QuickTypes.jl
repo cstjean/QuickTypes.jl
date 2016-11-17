@@ -17,18 +17,16 @@ of a type defined by `@qimmutable`, this holds:
 function construct end
 
 
-""" `roottypeof(obj)` returns the type of obj with generic parametric types,
-for types defined with QuickTypes. Eg.
+""" `roottypeof(obj)` returns the type of obj with generic parametric types. Eg.
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
-function roottypeof end
+@generated roottypeof(obj) = obj.name.primary
 
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
 See also `QuickTypes.construct` """
-@generated function fieldsof(obj)
-    :(tuple($([:(obj.$field)
-        for field in fieldnames(obj)]...)))
-end
+@generated fieldsof(obj) = :(tuple($([:(obj.$field)
+                                      for field in fieldnames(obj)]...)))
+
 
 ################################################################################
 
@@ -159,12 +157,10 @@ function qexpansion(def, mutable)
              $constraints
              $name($(o_constr_args...))
          end))
-    roottypeof_def = :($QuickTypes.roottypeof(obj::$name) = $name)
     esc(Expr(:toplevel,
              type_def,
              outer_constr,
              construct_def,
-             roottypeof_def,
              show_expr,
              nothing))
 end
