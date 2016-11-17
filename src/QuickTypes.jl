@@ -143,7 +143,6 @@ function qexpansion(def, mutable)
         :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
                                     inner_constr))))
-    construct_sign = :($QuickTypes.construct(::Type{$name}, $(new_args...)))
     construct_def =
         (length(o_constr_kwargs) > 0 ?
          :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
@@ -183,7 +182,8 @@ type Car <: Vehicle
 end
 ```
 
-Also supports parametric types: `@qtype Door{T}(size::T)`. Invariants can be enforced using do-syntax:
+Also supports parametric types: `@qtype Door{T}(size::T)`. Invariants can be
+enforced using do-syntax:
 ```julia
 @qimmutable Human(name, height::Float64) do
     @assert height > 0    # arbitrary code, executed before creating the object
