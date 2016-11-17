@@ -146,11 +146,19 @@ function qexpansion(def, mutable)
                                Expr(:block, fields..., kwfields...,
                                     inner_constr))))
     construct_sign = :($QuickTypes.construct(::Type{$name}, $(new_args...)))
-    construct_def = (length(o_constr_kwargs) > 0 ?
-                     :($construct_sign = $name($(o_constr_args...);
-                                               $(o_constr_kwargs...))) :
-                     # Special-casing necessary because of julialang#18845
-                     :($construct_sign = $name($(o_constr_args...))))
+    construct_def =
+        (length(o_constr_kwargs) > 0 ?
+         :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
+             $constraints
+             $name($(o_constr_args...);
+                   $(o_constr_kwargs...))
+         end) :
+         # Special-casing necessary because of julialang#18845
+         # Solved on 0.5.1
+         :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
+             $constraints
+             $name($(o_constr_args...))
+         end))
     roottypeof_def = :($QuickTypes.roottypeof(obj::$name) = $name)
     esc(Expr(:toplevel,
              type_def,

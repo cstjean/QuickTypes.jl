@@ -30,8 +30,9 @@ Empty()
 
 ################################################################################
 
-@qtype Foo{T}(x::T, y) do
+@qtype Foo{T}(x::T; y=2) do
     @assert x < 10
 end
 
-@test_throws AssertionError Foo(11, 10.0)
+@test_throws AssertionError Foo(11; y=10.0)
+@test_throws AssertionError construct(Foo, 11, 10.0)
