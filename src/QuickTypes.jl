@@ -88,7 +88,9 @@ function qexpansion(def, mutable)
             push!(o_constr_args, get_sym(arg))
         end
     end
-    define_show = true
+    # By default, only define Base.show when there are keyword arguments --- otherwise
+    # the native `show` is perfectly sufficient.
+    define_show = !isempty(kwargs)
     for kwarg in kwargs  # keyword arguments
         fsym = get_sym(kwarg.args[1])::Symbol
         if fsym == :_define_show
