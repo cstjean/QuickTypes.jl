@@ -13,7 +13,7 @@ of `X`. This is useful for writing generic structure traversal. For any object
 of a type defined by `@qimmutable`, this holds:
 
     QuickTypes.construct(QuickTypes.roottypeof(o), QuickTypes.fieldsof(o)...) == o
- """
+"""
 function construct end
 
 
