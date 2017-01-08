@@ -40,8 +40,8 @@ end
 ### More options
 
 ```julia
-@qtype Group{X}(members::X, _concise_show=true)
-Group([1,2])
+@qtype Group{X}(members::X; _concise_show=true)
+Group([1,1+1])
 > Group([1,2])            # instead of Group{Array{Int64,1}}([1,2])
 ```
 
