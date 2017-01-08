@@ -33,7 +33,7 @@ abstract Tree
 
 # Arguments can be validated using do-syntax
 @qimmutable Human(name, height::Float64) do
-    @assert height > 0    # arbitrary code, executed before creating the object
+    @assert height > 0    # arbitrary code, executed in the constructor
 end
 ```
 
