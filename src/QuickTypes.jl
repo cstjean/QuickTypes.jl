@@ -43,6 +43,37 @@ function parse_funcall(fcall)
     end
 end
 
+function get_sym(e::Expr) 
+    @assert e.head==:(::)
+    e.args[1]
+end
+get_sym(e::Symbol) = e
+
+""" Build the Base.show function definition for that type """
+function build_show_def(define_show::Bool, name, fields, kwfields)
+    if !define_show return nothing end
+
+    :(function Base.show(io::IO, obj::$name)
+        print(io, typeof(obj))
+        write(io, "(")
+        # Positional args
+        $([:(show(io, obj.$(get_sym(field)));
+             # Print comma. I would prefer printing ", " but that's not
+             # what Julia 0.5 does.
+             $(field==last(fields) ? nothing : :(write(io, ","))))
+           for field in fields]...)
+        # separating semicolon
+        $(if !isempty(kwfields)
+            :(write(io, ";")) end)
+        # Keyword args
+        $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
+             show(io, obj.$(get_sym(kwfield)));
+             $(kwfield==last(kwfields) ? nothing : :(write(io, ","))))
+           for kwfield in kwfields]...)
+        write(io, ")")
+    end)
+end
+
 # Helper for @qtype/@qimmutable
 function qexpansion(def, mutable)
     if !@capture(def, typ_def_ <: parent_type_)
@@ -65,11 +96,6 @@ function qexpansion(def, mutable)
         parametric = false
         name = typ
     end
-    function get_sym(e::Expr) 
-        @assert e.head==:(::)
-        e.args[1]
-    end
-    get_sym(e::Symbol) = e
     fields = Any[]; kwfields = Any[]
     constr_args = Any[]; constr_kwargs = Any[]
     o_constr_args = Any[]; o_constr_kwargs = Any[]
@@ -117,30 +143,6 @@ function qexpansion(def, mutable)
                      :($typ_def =
                        $name{$(type_vars...)}($(o_constr_args...)))) :
                     nothing)
-    # The Base.show function for that type
-    if define_show
-        show_expr = :(function Base.show(io::IO, obj::$name)
-            print(io, typeof(obj))
-            write(io, "(")
-            # Positional args
-            $([:(show(io, obj.$(get_sym(field)));
-                 # Print comma. I would prefer printing ", " but that's not
-                 # what Julia 0.5 does.
-                 $(field==last(fields) ? nothing : :(write(io, ","))))
-               for field in fields]...)
-            # separating semicolon
-            $(if !isempty(kwfields)
-                :(write(io, ";")) end)
-            # Keyword args
-            $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
-                 show(io, obj.$(get_sym(kwfield)));
-                 $(kwfield==last(kwfields) ? nothing : :(write(io, ","))))
-               for kwfield in kwfields]...)
-            write(io, ")")
-        end)
-    else
-        show_expr = nothing
-    end
     type_def =
         :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
@@ -162,7 +164,7 @@ function qexpansion(def, mutable)
              type_def,
              outer_constr,
              construct_def,
-             show_expr,
+             build_show_def(define_show, name, fields, kwfields),
              nothing))
 end
 
