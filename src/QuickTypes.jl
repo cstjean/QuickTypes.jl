@@ -27,6 +27,7 @@ See also `QuickTypes.construct` """
 @generated fieldsof(obj) = :(tuple($([:(obj.$field)
                                       for field in fieldnames(obj)]...)))
 
+type_simple_name(ty::Type)::Symbol = ModMod.Foo.name.name
 
 ################################################################################
 
@@ -50,11 +51,11 @@ end
 get_sym(e::Symbol) = e
 
 """ Build the Base.show function definition for that type """
-function build_show_def(define_show::Bool, name, fields, kwfields)
-    if !define_show return nothing end
+function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwfields)
+    if !define_show && !concise_show return nothing end
 
     :(function Base.show(io::IO, obj::$name)
-        print(io, typeof(obj))
+        print(io, $(concise_show ? string(name) : :(typeof(obj))))
         write(io, "(")
         # Positional args
         $([:(show(io, obj.$(get_sym(field)));
@@ -114,13 +115,16 @@ function qexpansion(def, mutable)
             push!(o_constr_args, get_sym(arg))
         end
     end
-    # By default, only define Base.show when there are keyword arguments --- otherwise
-    # the native `show` is perfectly sufficient.
-    define_show = !isempty(kwargs)
+    define_show = nothing # see after the loop
+    concise_show = false # default
     for kwarg in kwargs  # keyword arguments
         fsym = get_sym(kwarg.args[1])::Symbol
         if fsym == :_define_show
             define_show = kwarg.args[2]::Bool
+            continue
+        end
+        if fsym == :_concise_show
+            concise_show = kwarg.args[2]::Bool
             continue
         end
         push!(kwfields, kwarg.args[1])
@@ -128,6 +132,12 @@ function qexpansion(def, mutable)
         push!(new_args, fsym)
         push!(o_constr_kwargs, Expr(:kw, fsym, fsym))
     end
+    # By default, only define Base.show when there are keyword arguments --- otherwise
+    # the native `show` is perfectly sufficient.
+    if define_show === nothing define_show = !isempty(kwfields) end
+
+    # -------------- end of parsing -------------
+
     inner_constr = quote
         function $name($(constr_args...); $(constr_kwargs...))
             $constraints
@@ -164,7 +174,7 @@ function qexpansion(def, mutable)
              type_def,
              outer_constr,
              construct_def,
-             build_show_def(define_show, name, fields, kwfields),
+             build_show_def(define_show, concise_show, name, fields, kwfields),
              nothing))
 end
 

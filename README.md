@@ -37,4 +37,12 @@ abstract Tree
 end
 ```
 
+### More options
+
+```julia
+@qtype Group{X}(members::X, _concise_show=true)
+Group([1,2])
+> Group([1,2])            # instead of Group{Array{Int64,1}}([1,2])
+```
+
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
