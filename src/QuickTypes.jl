@@ -27,7 +27,7 @@ See also `QuickTypes.construct` """
 @generated fieldsof(obj) = :(tuple($([:(obj.$field)
                                       for field in fieldnames(obj)]...)))
 
-type_simple_name(ty::Type)::Symbol = ModMod.Foo.name.name
+type_simple_name(ty::Type)::Symbol = ty.name.name
 
 ################################################################################
 
