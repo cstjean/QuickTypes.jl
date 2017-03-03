@@ -93,9 +93,13 @@ function qexpansion(def, mutable)
     if @capture(typ, name_{type_params__})
         parametric = true
         type_vars = map(get_type_var, type_params)
+        type_with_vars = :($name{$(type_vars...)})
     else
+        type_vars = []
+        type_params = []
         parametric = false
         name = typ
+        type_with_vars = name
     end
     fields = Any[]; kwfields = Any[]
     constr_args = Any[]; constr_kwargs = Any[]
@@ -139,9 +143,10 @@ function qexpansion(def, mutable)
     # -------------- end of parsing -------------
 
     inner_constr = quote
-        function $name($(constr_args...); $(constr_kwargs...))
+        function (::Type{$type_with_vars}){$(type_params...)}($(constr_args...);
+                                                              $(constr_kwargs...))
             $constraints
-            return new($(new_args...))
+            return new{$(type_vars...)}($(new_args...))
         end
     end
     outer_constr = (parametric ?
