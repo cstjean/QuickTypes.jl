@@ -4,13 +4,14 @@ module QuickTypes
 
 using MacroTools: @capture
 
-export @qtype, @qimmutable
+export @qmutable, @qstruct  # Julia 0.6
+export @qtype, @qimmutable  # Julia 0.5
 
 # These are not exported for now, because they are rather specific extensions.
-""" For a type X defined with `@qtype/@qimmutable` and with fields `a, b, c,
+""" For a type X defined with `@qmutable/@qstruct` and with fields `a, b, c,
 ...`, `QuickTypes.construct(X, 1, 2, 3...)` is a purely-positional constructor
 of `X`. This is useful for writing generic structure traversal. For any object
-of a type defined by `@qimmutable`, this holds:
+of a type defined by `@qstruct`, this holds:
 
     QuickTypes.construct(QuickTypes.roottypeof(o), QuickTypes.fieldsof(o)...) == o
 """
@@ -73,7 +74,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
     end)
 end
 
-# Helper for @qtype/@qimmutable
+# Helper for @qmutable/@qstruct
 function qexpansion(def, mutable)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
@@ -185,13 +186,13 @@ end
 """ Quick type definition. 
 
 ```julia
-@qtype Car(size, nwheels::Int=4; brand::String="unnamed") <: Vehicle
+@qstruct Car(size, nwheels::Int=4; brand::String="unnamed") <: Vehicle
 ```
 
 expands into
 
 ```julia
-type Car <: Vehicle
+struct Car <: Vehicle
     size
     nwheels::Int
     brand::String
@@ -199,30 +200,30 @@ type Car <: Vehicle
 end
 ```
 
-Also supports parametric types: `@qtype Door{T}(size::T)`. Invariants can be
+Also supports parametric types: `@qstruct Door{T}(size::T)`. Invariants can be
 enforced using do-syntax:
 ```julia
-@qimmutable Human(name, height::Float64) do
+@qstruct Human(name, height::Float64) do
     @assert height > 0    # arbitrary code, executed before creating the object
 end
 ```
 
-Note: `@qtype` automatically defines a `Base.show` method for the new type,
-unless `_define_show=false` (eg. `@qtype(x, y; _define_show=false)`).
+Note: `@qstruct` automatically defines a `Base.show` method for the new type,
+unless `_define_show=false` (eg. `@qstruct(x, y; _define_show=false)`).
 """
-macro qmutable(def)
-    return qexpansion(def, true)
-end
-macro qtype(def)
-    return qexpansion(def, true)
-end
-
-""" Quick immutable definition. See ?qtype """
 macro qstruct(def)
     return qexpansion(def, false)
 end
-macro qimmutable(def)
+macro qimmutable(def)  # 0.5 and below
     return qexpansion(def, false)
+end
+
+""" Quick mutable struct definition. See ?@qstruct """
+macro qmutable(def)
+    return qexpansion(def, true)
+end
+macro qtype(def)   # 0.5 and below
+    return qexpansion(def, true)
 end
 
 
