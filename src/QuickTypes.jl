@@ -59,9 +59,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
         write(io, "(")
         # Positional args
         $([:(show(io, obj.$(get_sym(field)));
-             # Print comma. I would prefer printing ", " but that's not
-             # what Julia 0.5 does.
-             $(field==last(fields) ? nothing : :(write(io, ","))))
+             $(field==last(fields) ? nothing : :(write(io, ", "))))
            for field in fields]...)
         # separating semicolon
         $(if !isempty(kwfields)
@@ -69,7 +67,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
         # Keyword args
         $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
              show(io, obj.$(get_sym(kwfield)));
-             $(kwfield==last(kwfields) ? nothing : :(write(io, ","))))
+             $(kwfield==last(kwfields) ? nothing : :(write(io, ", "))))
            for kwfield in kwfields]...)
         write(io, ")")
     end)
