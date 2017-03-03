@@ -12,7 +12,7 @@ Types are central to Julia programming, but the built-in `type` and `immutable` 
 using QuickTypes      # install with Pkg.add("QuickTypes")
 
 # Equivalent to
-# type Wall
+# mutable struct Wall
 #    width
 #    height
 # end
