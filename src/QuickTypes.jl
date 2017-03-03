@@ -149,7 +149,7 @@ function qexpansion(def, mutable)
                      :($typ_def =
                        $name{$(type_vars...)}($(o_constr_args...);
                                               $(o_constr_kwargs...))) :
-                     # Special-casing necessary because of julialang#18845
+                     # Special-casing necessary because of julialang#18845. Fixed in 0.5.1
                      :($typ_def =
                        $name{$(type_vars...)}($(o_constr_args...)))) :
                     nothing)
