@@ -210,13 +210,17 @@ end
 Note: `@qtype` automatically defines a `Base.show` method for the new type,
 unless `_define_show=false` (eg. `@qtype(x, y; _define_show=false)`).
 """
+macro qmutable(def)
+    return qexpansion(def, true)
+end
 macro qtype(def)
     return qexpansion(def, true)
 end
 
-
-
 """ Quick immutable definition. See ?qtype """
+macro qstruct(def)
+    return qexpansion(def, false)
+end
 macro qimmutable(def)
     return qexpansion(def, false)
 end
