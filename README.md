@@ -25,7 +25,7 @@ using QuickTypes      # install with Pkg.add("QuickTypes")
 @qmutable Pack{T}(animals::Vector{T})
 
 # Inheritance
-abstract Tree
+abstract type Tree end
 @qmutable Maple(qty_syrup::Float64) <: Tree
 
 # Immutables work the same way
