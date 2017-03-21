@@ -6,30 +6,30 @@
 
 [![codecov.io](http://codecov.io/github/cstjean/QuickTypes.jl/coverage.svg?branch=master)](http://codecov.io/github/cstjean/QuickTypes.jl?branch=master)
 
-Types are central to Julia programming, but the built-in `type` and `immutable` definitions can be cumbersome to write. QuickTypes.jl provides two alternative macros, `@qmutable` and `@qstruct`, with a more convenient syntax:
+Types are central to Julia programming, but the built-in `struct` and `mutable struct` definitions can be cumbersome to write. QuickTypes.jl provides two alternative macros, `@qstruct` and `@qmutable`, with a more convenient syntax:
 
 ```julia
 using QuickTypes      # install with Pkg.add("QuickTypes")
 
 # Equivalent to
-# mutable struct Wall
+# struct Wall
 #    width
 #    height
 # end
-@qmutable Wall(width, height)
+@qstruct Wall(width, height)
 
 # Optional and keyword-arguments
-@qmutable Cat(name, age::Int, nlegs=4; species="Siamese")
+@qstruct Cat(name, age::Int, nlegs=4; species="Siamese")
 
 # Parametric type
-@qmutable Pack{T}(animals::Vector{T})
+@qstruct Pack{T}(animals::Vector{T})
 
 # Inheritance
 abstract type Tree end
-@qmutable Maple(qty_syrup::Float64) <: Tree
+@qstruct Maple(qty_syrup::Float64) <: Tree
 
-# Immutables work the same way
-@qstruct SquaredNumber(x2::Number)
+# Mutable structs work the same way
+@qmutable Window(height::Float64, width::Float64)
 
 # Arguments can be validated using do-syntax
 @qstruct Human(name, height::Float64) do
@@ -40,7 +40,7 @@ end
 ### More options
 
 ```julia
-@qmutable Group{X}(members::X; _concise_show=true)
+@qstruct Group{X}(members::X; _concise_show=true)
 Group([1,1+1])
 > Group([1,2])            # instead of Group{Array{Int64,1}}([1,2])
 ```
