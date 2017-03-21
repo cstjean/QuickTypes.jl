@@ -3,9 +3,11 @@ __precompile__()
 module QuickTypes
 
 using MacroTools: @capture
+import Compat # TODO before tag: remove this dep!
 
 export @qmutable, @qstruct  # Julia 0.6
 export @qtype, @qimmutable  # Julia 0.5
+export @qmutable_fp, @qstruct_fp  # Julia 0.6
 
 # These are not exported for now, because they are rather specific extensions.
 """ For a type X defined with `@qmutable/@qstruct` and with fields `a, b, c,
@@ -18,9 +20,10 @@ of a type defined by `@qstruct`, this holds:
 function construct end
 
 
+# Temporary for 0.6 compatibility. REPLACEME
 """ `roottypeof(obj)` returns the type of obj with generic parametric types. Eg.
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
-@generated roottypeof(obj) = obj.name.primary
+@generated roottypeof(obj_type) = Compat.TypeUtils.typename(obj_type).wrapper
 
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
@@ -75,7 +78,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
 end
 
 # Helper for @qmutable/@qstruct
-function qexpansion(def, mutable)
+function qexpansion(def, mutable; fully_parametric=false)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
@@ -90,6 +93,8 @@ function qexpansion(def, mutable)
     get_type_var(v::Symbol) = v
     get_type_var(e::Expr) = e.args[1]
     if @capture(typ, name_{type_params__})
+        @assert(!fully_parametric,
+                "Do not specify type arguments when using the `_fp` option")
         parametric = true
         type_vars = map(get_type_var, type_params)
         type_with_vars = :($name{$(type_vars...)})
@@ -100,6 +105,7 @@ function qexpansion(def, mutable)
         name = typ
         type_with_vars = name
     end
+    # Parse the regular arguments
     fields = Any[]; kwfields = Any[]
     constr_args = Any[]; constr_kwargs = Any[]
     o_constr_args = Any[]; o_constr_kwargs = Any[]
@@ -118,6 +124,7 @@ function qexpansion(def, mutable)
             push!(o_constr_args, get_sym(arg))
         end
     end
+    # Parse keyword-arguments
     define_show = nothing # see after the loop
     concise_show = false # default
     for kwarg in kwargs  # keyword arguments
@@ -179,6 +186,8 @@ function qexpansion(def, mutable)
              outer_constr,
              construct_def,
              build_show_def(define_show, concise_show, name, fields, kwfields),
+             # Temporary for 0.6 compatibility. DELETEME
+             :(similar_object(::$name, fields...) = $name(fields...)),
              nothing))
 end
 
@@ -226,6 +235,16 @@ macro qtype(def)   # 0.5 and below
     return qexpansion(def, true)
 end
 
+""" Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like
+`@qstruct Foo{T, U}(a::T, B::U=2)` """
+macro qstruct_fp(def)
+    return qexpansion(def, false, fully_parametric=true)
+end
+""" Fully-parametric version of `@qmutable`. `@qmutable_fp Foo(a, b=2)` is like
+`@qmutable Foo{T, U}(a::T, B::U=2)` """
+macro qmutable_fp(def)
+    return qexpansion(def, true, fully_parametric=true)
+end
 
 
 end # module
