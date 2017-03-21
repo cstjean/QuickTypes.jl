@@ -39,3 +39,11 @@ end
 
 @test_throws AssertionError Foo(11; y=10.0)
 @test_throws AssertionError construct(Foo, 11, 10.0)
+
+################################################################################
+# Fully-parametric
+
+@qstruct_fp Plane(nwheels; brand=:zoomba)
+
+@test_throws MethodError Plane{Int, Symbol}(2; brand=12)
+@test Plane{Int, Symbol}(2; brand=:zoomba).brand == :zoomba

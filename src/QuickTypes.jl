@@ -9,6 +9,8 @@ export @qmutable, @qstruct  # Julia 0.6
 export @qtype, @qimmutable  # Julia 0.5
 export @qmutable_fp, @qstruct_fp  # Julia 0.6
 
+const special_kwargs = [:_define_show, :_concise_show]
+
 # These are not exported for now, because they are rather specific extensions.
 """ For a type X defined with `@qmutable/@qstruct` and with fields `a, b, c,
 ...`, `QuickTypes.construct(X, 1, 2, 3...)` is a purely-positional constructor
@@ -78,7 +80,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
 end
 
 # Helper for @qmutable/@qstruct
-function qexpansion(def, mutable; fully_parametric=false)
+function qexpansion(def, mutable)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
@@ -93,8 +95,6 @@ function qexpansion(def, mutable; fully_parametric=false)
     get_type_var(v::Symbol) = v
     get_type_var(e::Expr) = e.args[1]
     if @capture(typ, name_{type_params__})
-        @assert(!fully_parametric,
-                "Do not specify type arguments when using the `_fp` option")
         parametric = true
         type_vars = map(get_type_var, type_params)
         type_with_vars = :($name{$(type_vars...)})
@@ -235,15 +235,55 @@ macro qtype(def)   # 0.5 and below
     return qexpansion(def, true)
 end
 
+# -----------------------------------------------------------------------------
+# Fully-parametric
+
+""" `macro_keyword_args(kwarg)`
+
+Macro helper: identfies x=y as a keyword argument (for macro or function), and returns
+(x, y) """
+function macro_keyword_args(kwarg)
+    # In 0.6, macro don't have keyword arguments, and treat @foo(x=1) as a positional
+    # argument that's an assignment. 
+    @assert kwarg.head == :kw || kwarg.head == :(=)
+    return (kwarg.args[1], kwarg.args[2])
+end
+
+
+# Helper for qstruct_fp
+function make_parametric(def)
+    all_types = []
+    function new_type()
+        new_ty = gensym()
+        push!(all_types, new_ty)
+        return new_ty
+    end
+    add_type(field::Symbol) = :($field::$(new_type()))
+    function add_type(field::Expr)
+        name, val = macro_keyword_args(field)
+        if name in special_kwargs
+            return field
+        else
+            return Expr(:kw, :($name::$(new_type())), val)
+        end
+    end
+    
+    ty, args, kwargs = parse_funcall(def)
+    typed_args = map(add_type, args)
+    typed_kwargs = map(add_type, kwargs)
+
+    return :($ty{$(all_types...)}($(typed_args...); $(typed_kwargs...)))
+end
+
 """ Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like
 `@qstruct Foo{T, U}(a::T, B::U=2)` """
 macro qstruct_fp(def)
-    return qexpansion(def, false, fully_parametric=true)
+    return qexpansion(make_parametric(def), false)
 end
 """ Fully-parametric version of `@qmutable`. `@qmutable_fp Foo(a, b=2)` is like
 `@qmutable Foo{T, U}(a::T, B::U=2)` """
 macro qmutable_fp(def)
-    return qexpansion(def, true, fully_parametric=true)
+    return qexpansion(make_parametric(def), true)
 end
 
 
