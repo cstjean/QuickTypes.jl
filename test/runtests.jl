@@ -43,7 +43,8 @@ end
 ################################################################################
 # Fully-parametric
 
-@qstruct_fp Plane(nwheels; brand=:zoomba)
+@qstruct_fp Plane(nwheels; brand=:zoomba) <: Vehicle
 
 @test_throws MethodError Plane{Int, Symbol}(2; brand=12)
 @test Plane{Int, Symbol}(2; brand=:zoomba).brand == :zoomba
+@test supertype(Plane) == Vehicle

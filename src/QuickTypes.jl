@@ -252,6 +252,12 @@ end
 
 # Helper for qstruct_fp
 function make_parametric(def)
+    # Handle inheritance
+    if !@capture(def, typ_def_ <: parent_type_)
+        typ_def = def
+        parent_type = :Any
+    end
+
     all_types = []
     function new_type()
         new_ty = gensym()
@@ -268,11 +274,11 @@ function make_parametric(def)
         end
     end
     
-    ty, args, kwargs = parse_funcall(def)
+    ty, args, kwargs = parse_funcall(typ_def)
     typed_args = map(add_type, args)
     typed_kwargs = map(add_type, kwargs)
 
-    return :($ty{$(all_types...)}($(typed_args...); $(typed_kwargs...)))
+    return :($ty{$(all_types...)}($(typed_args...); $(typed_kwargs...)) <: $parent_type)
 end
 
 """ Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like
