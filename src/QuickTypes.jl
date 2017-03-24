@@ -261,8 +261,10 @@ function make_parametric(def)
     end
 
     all_types = []
+    type_counter = 1
     function new_type()
-        new_ty = gensym()
+        new_ty = Symbol(:T, type_counter)
+        type_counter += 1
         push!(all_types, new_ty)
         return new_ty
     end
