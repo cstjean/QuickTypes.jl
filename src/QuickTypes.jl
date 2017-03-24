@@ -22,10 +22,12 @@ of a type defined by `@qstruct`, this holds:
 function construct end
 
 
-# Temporary for 0.6 compatibility. REPLACEME
 """ `roottypeof(obj)` returns the type of obj with generic parametric types. Eg.
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
-@generated roottypeof(obj_type) = Compat.TypeUtils.typename(obj_type).wrapper
+@generated roottypeof(obj_type) = roottype(obj_type)
+""" `roottype(typ::Type)` returns the parameterless type. Eg. `roottype(X{A}) => X` """
+roottype(typ::Type) = Compat.TypeUtils.typename(typ).wrapper
+type_parameters(typ) = typ.parameters
 
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.

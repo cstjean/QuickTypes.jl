@@ -1,6 +1,6 @@
 using Compat: @compat
 using QuickTypes
-using QuickTypes: construct, roottypeof, fieldsof
+using QuickTypes: construct, roottypeof, fieldsof, type_parameters
 using Base.Test
 
 @compat abstract type Vehicle end
@@ -17,9 +17,8 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 # Check that the fields are in the right order
 @test fieldnames(c) == [:size, :nwheels, :manufacturer, :brand]
 # This is essentially the definition of these functions.
-# I'm not sure that it can be made to work in 0.6
-# https://discourse.julialang.org/t/getting-the-base-type-in-0-6/2425/4
-## @test construct(roottypeof(c), fieldsof(c)...) == c
+@test construct(roottypeof(c), fieldsof(c)...) == c
+@test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
 
 ################################################################################
 
