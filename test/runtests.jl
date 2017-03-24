@@ -44,7 +44,9 @@ end
 ################################################################################
 # Fully-parametric
 
-@qstruct_fp Plane(nwheels; brand=:zoomba) <: Vehicle
+@qstruct_fp Plane(nwheels; brand=:zoomba) do
+    @assert nwheels < 100
+end <: Vehicle
 
 @test_throws MethodError Plane{Int, Symbol}(2; brand=12)
 @test Plane{Int, Symbol}(2; brand=:zoomba).brand == :zoomba

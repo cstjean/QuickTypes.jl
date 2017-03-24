@@ -82,7 +82,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
 end
 
 # Helper for @qmutable/@qstruct
-function qexpansion(def, mutable)
+function qexpansion(def, mutable, fully_parametric)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
@@ -94,6 +94,10 @@ function qexpansion(def, mutable)
     else
         constraints = nothing
     end
+    if fully_parametric
+        typ, typ_def, args, kwargs = make_parametric(typ, typ_def, args, kwargs)
+    end
+
     get_type_var(v::Symbol) = v
     get_type_var(e::Expr) = e.args[1]
     if @capture(typ, name_{type_params__})
@@ -223,18 +227,18 @@ Note: `@qstruct` automatically defines a `Base.show` method for the new type,
 unless `_define_show=false` (eg. `@qstruct(x, y; _define_show=false)`).
 """
 macro qstruct(def)
-    return qexpansion(def, false)
+    return qexpansion(def, false, false)
 end
 macro qimmutable(def)  # 0.5 and below
-    return qexpansion(def, false)
+    return qexpansion(def, false, false)
 end
 
 """ Quick mutable struct definition. See ?@qstruct """
 macro qmutable(def)
-    return qexpansion(def, true)
+    return qexpansion(def, true, false)
 end
 macro qtype(def)   # 0.5 and below
-    return qexpansion(def, true)
+    return qexpansion(def, true, false)
 end
 
 # -----------------------------------------------------------------------------
@@ -253,13 +257,7 @@ end
 
 
 # Helper for qstruct_fp
-function make_parametric(def)
-    # Handle inheritance
-    if !@capture(def, typ_def_ <: parent_type_)
-        typ_def = def
-        parent_type = :Any
-    end
-
+function make_parametric(typ, typ_def, args, kwargs)
     all_types = []
     type_counter = 1
     function new_type()
@@ -278,22 +276,23 @@ function make_parametric(def)
         end
     end
     
-    ty, args, kwargs = parse_funcall(typ_def)
     typed_args = map(add_type, args)
     typed_kwargs = map(add_type, kwargs)
+    new_typ = :($typ{$(all_types...)})
 
-    return :($ty{$(all_types...)}($(typed_args...); $(typed_kwargs...)) <: $parent_type)
+    return (new_typ, :($new_typ($(typed_args...); $(typed_kwargs...))),
+            typed_args, typed_kwargs)
 end
 
 """ Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like
 `@qstruct Foo{T, U}(a::T, B::U=2)` """
 macro qstruct_fp(def)
-    return qexpansion(make_parametric(def), false)
+    return qexpansion(def, false, true)
 end
 """ Fully-parametric version of `@qmutable`. `@qmutable_fp Foo(a, b=2)` is like
 `@qmutable Foo{T, U}(a::T, B::U=2)` """
 macro qmutable_fp(def)
-    return qexpansion(make_parametric(def), true)
+    return qexpansion(def, true, true)
 end
 
 
