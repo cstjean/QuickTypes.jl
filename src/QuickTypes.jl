@@ -280,8 +280,14 @@ function make_parametric(typ, typ_def, args, kwargs)
     typed_kwargs = map(add_type, kwargs)
     new_typ = :($typ{$(all_types...)})
 
-    return (new_typ, :($new_typ($(typed_args...); $(typed_kwargs...))),
-            typed_args, typed_kwargs)
+    if type_counter == 1
+        # Has to special-case the "no type parameters" case because of
+        # https://github.com/JuliaLang/julia/issues/20878
+        return (typ, typ_def, args, kwargs)
+    else
+        return (new_typ, :($new_typ($(typed_args...); $(typed_kwargs...))),
+                typed_args, typed_kwargs)
+    end
 end
 
 """ Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like

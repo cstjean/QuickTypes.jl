@@ -1,6 +1,6 @@
 using Compat: @compat
 using QuickTypes
-using QuickTypes: construct, roottypeof, fieldsof, type_parameters
+using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype
 using Base.Test
 
 @compat abstract type Vehicle end
@@ -21,6 +21,8 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 # we diable the test.
 # @test construct(roottypeof(c), fieldsof(c)...) == c
 @test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
+@inferred roottype(Pair{1,2})
+@inferred roottypeof(1=>2)
 
 ################################################################################
 
@@ -51,3 +53,5 @@ end <: Vehicle
 @test_throws MethodError Plane{Int, Symbol}(2; brand=12)
 @test Plane{Int, Symbol}(2; brand=:zoomba).brand == :zoomba
 @test supertype(Plane) == Vehicle
+
+@qstruct_fp NoFields()   # was an error before it was special-cased
