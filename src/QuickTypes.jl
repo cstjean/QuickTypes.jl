@@ -28,7 +28,8 @@ function construct end
 """ `roottype(typ::Type)` returns the parameterless type. Eg. `roottype(X{A}) => X` """
 roottype(typ::Type) = Compat.TypeUtils.typename(typ).wrapper
 type_parameters(typ) = typ.parameters
-
+""" `field_types(typ)` returns the types of the fields of a composite type. """
+field_types(typ::Type) = typ.types
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
 See also `QuickTypes.construct` """
