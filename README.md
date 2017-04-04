@@ -45,7 +45,7 @@ Group([1,1+1])
 > Group([1,2])            # instead of Group{Array{Int64,1}}([1,2])
 
 # `_fp` (for Fully Parametric) automatically adds type parameters.
-# This example is equivalent to `@qstruct Plan{T, U}(nwheels::T; brand::U=:zoombda)`:
+# This example is equivalent to `@qstruct Plane{T, U}(nwheels::T; brand::U=:zoomba)`:
 @qstruct_fp Plane(nwheels; brand=:zoomba)
 ```
 
