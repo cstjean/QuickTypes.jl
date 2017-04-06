@@ -21,8 +21,11 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 # we diable the test.
 # @test construct(roottypeof(c), fieldsof(c)...) == c
 @test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
-@inferred roottype(Pair{1,2})
-@inferred roottypeof(1=>2)
+if VERSION < v"0.5.100"
+    @test roottype(Pair{1,2}) == Pair
+else
+    @inferred roottypeof(1=>2) == Pair
+end
 
 ################################################################################
 
