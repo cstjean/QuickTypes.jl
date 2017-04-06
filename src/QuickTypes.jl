@@ -193,8 +193,6 @@ function qexpansion(def, mutable, fully_parametric)
              outer_constr,
              construct_def,
              build_show_def(define_show, concise_show, name, fields, kwfields),
-             # Temporary for 0.6 compatibility. DELETEME
-             :(similar_object(::$name, fields...) = $name(fields...)),
              nothing))
 end
 
