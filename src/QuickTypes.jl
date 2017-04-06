@@ -26,7 +26,8 @@ function construct end
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
 @generated roottypeof(obj_type) = roottype(obj_type)
 """ `roottype(typ::Type)` returns the parameterless type. Eg. `roottype(X{A}) => X` """
-roottype(typ::Type) = Compat.TypeUtils.typename(typ).wrapper
+roottype(typ::Type) =
+    VERSION < v"0.5.100" ? typ.name.primary : Compat.TypeUtils.typename(typ).wrapper
 type_parameters(typ) = typ.parameters
 """ `field_types(typ)` returns the types of the fields of a composite type. """
 field_types(typ::Type) = typ.types
