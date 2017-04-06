@@ -3,7 +3,7 @@ __precompile__()
 module QuickTypes
 
 using MacroTools: @capture
-import Compat # TODO before tag: remove this dep!
+import Compat
 
 export @qmutable, @qstruct  # Julia 0.6
 export @qtype, @qimmutable  # Julia 0.5
