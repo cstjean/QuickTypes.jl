@@ -32,6 +32,11 @@ end
 @qimmutable Empty()
 Empty()
 
+# Used to yield:
+#     WARNING: static parameter T does not occur in signature for Type.
+#     The method will not be callable.
+@qstruct Blah{T}()
+
 ################################################################################
 
 @qimmutable Kwaroo(x; y=10)

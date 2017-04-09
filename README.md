@@ -37,6 +37,8 @@ abstract type Tree end
 end
 ```
 
+QuickTypes expands correctly on both Julia 0.5 and 0.6.
+
 ### More options
 
 ```julia

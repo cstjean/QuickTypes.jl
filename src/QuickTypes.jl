@@ -2,7 +2,7 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture
+using MacroTools: @capture, prewalk
 import Compat
 
 export @qmutable, @qstruct  # Julia 0.6
@@ -81,6 +81,24 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
            for kwfield in kwfields]...)
         write(io, ")")
     end)
+end
+
+function all_type_vars_present(type_vars, args)
+    # If we create an outer constructor whose parameters are not part of the args, we get
+    #     > @qstruct Blah{T}()
+    #     WARNING: static parameter T does not occur in signature for Type.
+    #     The method will not be callable.
+    # So we detect this case and don't emit an outer constructor
+    s = Set(type_vars)
+    for arg in args
+        prewalk(arg) do x
+            if isa(x, Symbol)
+                delete!(s, x)
+            end
+            x
+        end
+    end
+    return isempty(s)
 end
 
 # Helper for @qmutable/@qstruct
@@ -163,7 +181,9 @@ function qexpansion(def, mutable, fully_parametric)
             return new{$(type_vars...)}($(new_args...))
         end
     end
-    outer_constr = (parametric ?
+    global dbg1 = (type_vars, [args; kwargs])
+    outer_constr = ((parametric &&
+                     all_type_vars_present(type_vars, [args; kwargs])) ?
                     (length(o_constr_kwargs) > 0 ?
                      :($typ_def =
                        $name{$(type_vars...)}($(o_constr_args...);
