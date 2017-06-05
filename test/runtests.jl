@@ -54,12 +54,13 @@ end
 ################################################################################
 # Fully-parametric
 
-@qstruct_fp Plane(nwheels; brand=:zoomba) do
+@qstruct_fp Plane(nwheels::Number; brand=:zoomba) do
     @assert nwheels < 100
 end <: Vehicle
 
 @test_throws MethodError Plane{Int, Symbol}(2; brand=12)
 @test Plane{Int, Symbol}(2; brand=:zoomba).brand == :zoomba
 @test supertype(Plane) == Vehicle
+@test_throws MethodError Plane("happy")
 
 @qstruct_fp NoFields()   # was an error before it was special-cased

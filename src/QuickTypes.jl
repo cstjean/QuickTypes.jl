@@ -2,7 +2,7 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk
+using MacroTools: @capture, prewalk, @match
 import Compat
 
 export @qmutable, @qstruct  # Julia 0.6
@@ -264,15 +264,19 @@ end
 # -----------------------------------------------------------------------------
 # Fully-parametric
 
-""" `macro_keyword_args(kwarg)`
-
-Macro helper: identfies x=y as a keyword argument (for macro or function), and returns
-(x, y) """
-function macro_keyword_args(kwarg)
-    # In 0.6, macro don't have keyword arguments, and treat @foo(x=1) as a positional
-    # argument that's an assignment. 
-    @assert kwarg.head == :kw || kwarg.head == :(=)
-    return (kwarg.args[1], kwarg.args[2])
+function splitarg(arg_expr)  # TODO: use the definition from MacroTools when updated 
+    split_var(arg) =
+        @match arg begin
+            ::T_ => (nothing, T)
+            name_::T_ => (name, T)
+            x_ => (arg, :Any)
+        end
+    if @capture(arg_expr, arg_ = default_)
+        @assert default !== nothing "splitarg cannot handle `nothing` as a default. Use a quoted `nothing` if possible. (MacroTools#35)"
+        return (split_var(arg)..., default)
+    else
+        return (split_var(arg_expr)..., nothing)
+    end
 end
 
 
@@ -280,19 +284,19 @@ end
 function make_parametric(typ, typ_def, args, kwargs)
     all_types = []
     type_counter = 1
-    function new_type()
+    function new_type(parent)
         new_ty = Symbol(:T, type_counter)
         type_counter += 1
-        push!(all_types, new_ty)
+        push!(all_types, :($new_ty <: $parent))
         return new_ty
     end
-    add_type(field::Symbol) = :($field::$(new_type()))
-    function add_type(field::Expr)
-        name, val = macro_keyword_args(field)
+    #add_type(field::Symbol) = :($field::$(new_type()))
+    function add_type(field)
+        name, parent_type, val = splitarg(field)
         if name in special_kwargs
             return field
         else
-            return Expr(:kw, :($name::$(new_type())), val)
+            return Expr(:kw, :($name::$(new_type(parent_type))), val)
         end
     end
     

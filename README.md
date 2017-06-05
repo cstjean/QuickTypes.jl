@@ -47,9 +47,8 @@ These macros expand correctly on Julia 0.5 and 0.6.
 Group([1,1+1])
 > Group([1,2])            # instead of Group{Array{Int64,1}}([1,2])
 
-# `_fp` (for Fully Parametric) automatically adds type parameters.
-# This example is equivalent to `@qstruct Plane{T, U}(nwheels::T; brand::U=:zoomba)`:
-@qstruct_fp Plane(nwheels; brand=:zoomba)
-```
+# `_fp` (for Fully Parametric) automatically adds type parameters. For example:
+@qstruct_fp Plane(nwheels, weight::Number; brand=:zoomba)
+# is equivalent to `@qstruct Plane{T, U <: Number, V}(nwheels::T, weight::U; brand::V=:zoomba)````
 
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
