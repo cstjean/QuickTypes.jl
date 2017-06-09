@@ -1,6 +1,7 @@
 using Compat: @compat
 using QuickTypes
-using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype
+using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
+      tuple_parameters
 using Base.Test
 
 @compat abstract type Vehicle end
@@ -21,6 +22,7 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 # we diable the test.
 # @test construct(roottypeof(c), fieldsof(c)...) == c
 @test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
+@test tuple_parameters(Tuple{Int, Float64}) == Base.Core.svec(Int64, Float64)
 if VERSION < v"0.5.100"
     @test roottype(Pair{1,2}) == Pair
 else

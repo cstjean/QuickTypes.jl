@@ -31,6 +31,9 @@ roottype(typ::Type) =
 type_parameters(typ) = typ.parameters
 """ `field_types(typ)` returns the types of the fields of a composite type. """
 field_types(typ::Type) = typ.types
+""" `tuple_parameters{T<:Tuple}(::Type{T})` returns the type of each element of the
+tuple, as `svec(type1, type2, ...)` """
+tuple_parameters{T<:Tuple}(::Type{T}) = type_parameters(T)
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
 See also `QuickTypes.construct` """
