@@ -30,7 +30,7 @@ roottype(typ::Type) =
     VERSION < v"0.5.100" ? typ.name.primary : Compat.TypeUtils.typename(typ).wrapper
 type_parameters(typ) = typ.parameters
 """ `field_types(typ)` returns the types of the fields of a composite type. """
-field_types(typ::Type) = typ.types
+field_types(typ::Type) = typ.types  # TODO: use Code.fieldtype
 """ `tuple_parameters{T<:Tuple}(::Type{T})` returns the type of each element of the
 tuple, as `svec(type1, type2, ...)` """
 tuple_parameters{T<:Tuple}(::Type{T}) = type_parameters(T)
