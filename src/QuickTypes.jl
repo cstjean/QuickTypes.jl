@@ -29,11 +29,16 @@ function construct end
 roottype(typ::Type) =
     VERSION < v"0.5.100" ? typ.name.primary : Compat.TypeUtils.typename(typ).wrapper
 type_parameters(typ) = typ.parameters
-""" `field_types(typ)` returns the types of the fields of a composite type. """
-field_types(typ::Type) = typ.types  # TODO: use Code.fieldtype
+""" `fieldtypes(typ)` returns the types of the fields of a composite type. """
+fieldtypes(typ::Type) = # not type-stable ATM. The generated function seemed to have
+                        # fieldnames return [] for some reason. Maybe I should try
+                        # (fieldtype(typ, 1), fieldtype(typ, 2), ...)
+    tuple((fieldtype(typ, f) for f in fieldnames(typ))...)
 """ `tuple_parameters{T<:Tuple}(::Type{T})` returns the type of each element of the
 tuple, as `svec(type1, type2, ...)` """
 tuple_parameters{T<:Tuple}(::Type{T}) = type_parameters(T)
+@generated tuple_parameters_stable{T<:Tuple}(::Type{T}) = tuple(type_parameters(T)...)
+type_length{T}(::Type{T}) = length(fieldnames(T))
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
 See also `QuickTypes.construct` """
