@@ -178,7 +178,7 @@ function qexpansion(def, mutable, fully_parametric)
     end
     # By default, only define Base.show when there are keyword arguments --- otherwise
     # the native `show` is perfectly sufficient.
-    if define_show === nothing define_show = !isempty(kwfields) end
+    if define_show === nothing; define_show = !isempty(kwfields) end
 
     # -------------- end of parsing -------------
 
@@ -189,34 +189,22 @@ function qexpansion(def, mutable, fully_parametric)
             return new{$(type_vars...)}($(new_args...))
         end
     end
-    global dbg1 = (type_vars, [args; kwargs])
     outer_constr = ((parametric &&
                      all_type_vars_present(type_vars, [args; kwargs])) ?
-                    (length(o_constr_kwargs) > 0 ?
-                     :($typ_def =
-                       $name{$(type_vars...)}($(o_constr_args...);
-                                              $(o_constr_kwargs...))) :
-                     # Special-casing necessary because of julialang#18845. Fixed in 0.5.1
-                     :($typ_def =
-                       $name{$(type_vars...)}($(o_constr_args...)))) :
+                    :($typ_def =
+                      $name{$(type_vars...)}($(o_constr_args...);
+                                             $(o_constr_kwargs...))) :
                     nothing)
     type_def =
         :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
                                     inner_constr))))
     construct_def =
-        (length(o_constr_kwargs) > 0 ?
          :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
              $constraints
              $name($(o_constr_args...);
                    $(o_constr_kwargs...))
-         end) :
-         # Special-casing necessary because of julialang#18845
-         # Solved on 0.5.1
-         :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
-             $constraints
-             $name($(o_constr_args...))
-         end))
+         end)
     esc(Expr(:toplevel,
              type_def,
              outer_constr,
