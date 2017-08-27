@@ -110,7 +110,7 @@ function all_type_vars_present(type_vars, args)
 end
 
 # Helper for @qmutable/@qstruct
-function qexpansion(def, mutable, fully_parametric)
+function qexpansion(def, mutable, fully_parametric, narrow_types)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
@@ -243,18 +243,18 @@ Note: `@qstruct` automatically defines a `Base.show` method for the new type,
 unless `_define_show=false` (eg. `@qstruct(x, y; _define_show=false)`).
 """
 macro qstruct(def)
-    return qexpansion(def, false, false)
+    return qexpansion(def, false, false, false)
 end
 macro qimmutable(def)  # 0.5 and below
-    return qexpansion(def, false, false)
+    return qexpansion(def, false, false, false)
 end
 
 """ Quick mutable struct definition. See ?@qstruct """
 macro qmutable(def)
-    return qexpansion(def, true, false)
+    return qexpansion(def, true, false, false)
 end
 macro qtype(def)   # 0.5 and below
-    return qexpansion(def, true, false)
+    return qexpansion(def, true, false, false)
 end
 
 # -----------------------------------------------------------------------------
@@ -313,12 +313,12 @@ end
 """ Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like
 `@qstruct Foo{T, U}(a::T, B::U=2)` """
 macro qstruct_fp(def)
-    return qexpansion(def, false, true)
+    return qexpansion(def, false, true, false)
 end
 """ Fully-parametric version of `@qmutable`. `@qmutable_fp Foo(a, b=2)` is like
 `@qmutable Foo{T, U}(a::T, B::U=2)` """
 macro qmutable_fp(def)
-    return qexpansion(def, true, true)
+    return qexpansion(def, true, true, false)
 end
 
 
