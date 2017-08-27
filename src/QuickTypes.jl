@@ -110,8 +110,8 @@ function all_type_vars_present(type_vars, args)
     return isempty(s)
 end
 
-narrow_typeof(t::Type{T}) where T = Type{T}
-narrow_typeof(t::T) where T = T
+narrow_typeof{T}(t::Type{T}) = Type{T}
+narrow_typeof{T}(t::T) = T
 
 # Helper for @qmutable/@qstruct
 # narrow_types means that 
