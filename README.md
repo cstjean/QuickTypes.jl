@@ -50,6 +50,7 @@ Group([1,1+1])
 # `_fp` (for Fully Parametric) automatically adds type parameters. For example:
 @qstruct_fp Plane(nwheels, weight::Number; brand=:zoomba)
 # is equivalent to `@qstruct Plane{T, U <: Number, V}(nwheels::T, weight::U; brand::V=:zoomba)`
+# For even greater specialization, see `?@qstruct_np`.
 ```
 
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).

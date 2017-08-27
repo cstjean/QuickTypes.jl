@@ -8,6 +8,7 @@ import Compat
 export @qmutable, @qstruct  # Julia 0.6
 export @qtype, @qimmutable  # Julia 0.5
 export @qmutable_fp, @qstruct_fp  # Julia 0.6
+export @qstruct_np, @qmutable_np
 
 const special_kwargs = [:_define_show, :_concise_show]
 
@@ -109,7 +110,11 @@ function all_type_vars_present(type_vars, args)
     return isempty(s)
 end
 
+narrow_typeof(t::Type{T}) where T = Type{T}
+narrow_typeof(t::T) where T = T
+
 # Helper for @qmutable/@qstruct
+# narrow_types means that 
 function qexpansion(def, mutable, fully_parametric, narrow_types)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
@@ -182,17 +187,23 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
 
     # -------------- end of parsing -------------
 
+    if narrow_types
+        given_types = [:($QuickTypes.narrow_typeof($a))
+                       for a in (fields..., kwfields...)]
+    else
+        given_types = type_vars
+    end
     inner_constr = quote
         function (::Type{$type_with_vars}){$(type_params...)}($(constr_args...);
                                                               $(constr_kwargs...))
             $constraints
-            return new{$(type_vars...)}($(new_args...))
+            return new{$(given_types...)}($(new_args...))
         end
     end
     outer_constr = ((parametric &&
                      all_type_vars_present(type_vars, [args; kwargs])) ?
                     :($typ_def =
-                      $name{$(type_vars...)}($(o_constr_args...);
+                      $name{$(given_types...)}($(o_constr_args...);
                                              $(o_constr_kwargs...))) :
                     nothing)
     type_def =
@@ -321,5 +332,15 @@ macro qmutable_fp(def)
     return qexpansion(def, true, true, false)
 end
 
+
+""" Narrowly-parametric version of `@qstruct`. `@qstruct_np Foo(a, b=2)` is like
+`@qstruct Foo{T, U}(a::T, B::U=2)`, but it will additionally specialize on types:
+`Foo(Int, 2.0) ==> Foo{Type{Int64},Float64}(Int64, 2.0)` """
+macro qstruct_np(def)
+    return qexpansion(def, false, true, true)
+end
+macro qmutable_np(def)
+    return qexpansion(def, true, true, true)
+end
 
 end # module

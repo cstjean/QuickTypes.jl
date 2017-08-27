@@ -66,3 +66,14 @@ end <: Vehicle
 @test_throws MethodError Plane("happy")
 
 @qstruct_fp NoFields()   # was an error before it was special-cased
+
+################################################################################
+# Narrowly-parametric
+
+@qstruct_fp Foo_fp(a, b)
+@qstruct_np Foo_np(a, b)
+convert_f(foo) = convert(foo.a, 10)
+@test_throws(Exception, @inferred convert_f(Foo_fp(Int, 2)))
+@inferred convert_f(Foo_np(Int, 2))
+@test fieldtype(typeof(Foo_np(Int, 2)), :a) == Type{Int64}
+
