@@ -197,7 +197,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         function (::Type{$type_with_vars}){$(type_params...)}($(constr_args...);
                                                               $(constr_kwargs...))
             $constraints
-            return new{$(given_types...)}($(new_args...))
+            return new{$(type_vars...)}($(new_args...))
         end
     end
     outer_constr = ((parametric &&
