@@ -302,6 +302,8 @@ function make_parametric(typ, typ_def, args, kwargs)
         name, parent_type, val = splitarg(field)
         if name in special_kwargs
             return field
+        elseif val==nothing
+            return :($name::$(new_type(parent_type)))
         else
             return Expr(:kw, :($name::$(new_type(parent_type))), val)
         end
