@@ -82,7 +82,7 @@ function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwf
            for field in fields]...)
         # separating semicolon
         $(if !isempty(kwfields)
-            :(write(io, ";")) end)
+            :(write(io, "; ")) end)
         # Keyword args
         $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
              show(io, obj.$(get_sym(kwfield)));
