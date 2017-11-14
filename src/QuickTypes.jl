@@ -37,9 +37,11 @@ fieldtypes(typ::Type) = # not type-stable ATM. The generated function seemed to 
     tuple((fieldtype(typ, f) for f in fieldnames(typ))...)
 """ `tuple_parameters{T<:Tuple}(::Type{T})` returns the type of each element of the
 tuple, as `svec(type1, type2, ...)` """
-tuple_parameters{T<:Tuple}(::Type{T}) = type_parameters(T)
-@generated tuple_parameters_stable{T<:Tuple}(::Type{T}) = tuple(type_parameters(T)...)
-type_length{T}(::Type{T}) = length(fieldnames(T))
+tuple_parameters(::Type{T}) where {T<:Tuple} = type_parameters(T)
+@generated tuple_parameters_stable(::Type{T}) where {T<:Tuple} =
+    :(error("This is broken; it returns a type-tuples, but those cannot be fully-typed, they are instead Tuple{DataType, DataType, ...}. TODO: perhaps we can return Some{...}?"))
+    #tuple(type_parameters(T)...)
+@generated type_length(::Type{T}) where T = length(fieldnames(T))
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
 See also `QuickTypes.construct` """
