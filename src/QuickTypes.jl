@@ -42,6 +42,7 @@ tuple_parameters(::Type{T}) where {T<:Tuple} = type_parameters(T)
     :(error("This is broken; it returns a type-tuples, but those cannot be fully-typed, they are instead Tuple{DataType, DataType, ...}. TODO: perhaps we can return Some{...}?"))
     #tuple(type_parameters(T)...)
 @generated type_length(::Type{T}) where T = length(fieldnames(T))
+is_mutable(::Type{T}) where T = T.mutable
 
 """ `fieldsof(obj)` returns the fields of `obj` in a tuple.
 See also `QuickTypes.construct` """
