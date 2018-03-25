@@ -66,7 +66,9 @@ end <: Vehicle
 @test_throws MethodError Plane{Int, Symbol}(2; brand=12)
 @test Plane{Int, Symbol}(2; brand=:zoomba).brand == :zoomba
 @test supertype(Plane) == Vehicle
-@test_throws MethodError Plane("happy")
+# This used to be a MethodError, but since we moved the outer constructor inside
+# the type, it has become a TypeError. Not sure why!
+@test_throws TypeError Plane("happy")
 
 @qstruct_fp NoFields()   # was an error before it was special-cased
 

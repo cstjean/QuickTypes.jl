@@ -203,16 +203,16 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             return new{$(type_vars...)}($(new_args...))
         end
     end
-    outer_constr = ((parametric &&
-                     all_type_vars_present(type_vars, [args; kwargs])) ?
-                    :($typ_def =
-                      $name{$(given_types...)}($(o_constr_args...);
-                                             $(o_constr_kwargs...))) :
-                    nothing)
+    straight_constr = :($name($(args...); $(kwargs...)) where {$(type_vars...)} =
+                        $name{$(given_types...)}($(o_constr_args...);
+                                                 $(o_constr_kwargs...)))
     type_def =
         :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
-                                    inner_constr))))
+                                    inner_constr,
+                                    ((parametric &&
+                                      all_type_vars_present(type_vars, [args; kwargs]))
+                                     ? [straight_constr] : [])...))))
     construct_def =
          :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
              $constraints
@@ -221,7 +221,6 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
          end)
     esc(Expr(:toplevel,
              type_def,
-             outer_constr,
              construct_def,
              build_show_def(define_show, concise_show, name, fields, kwfields),
              nothing))
