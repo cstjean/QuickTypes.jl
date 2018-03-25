@@ -37,6 +37,13 @@ Empty()
 
 ################################################################################
 
+@qstruct Boring(x::Int)
+@inferred Boring(10)
+@test Boring(10).x == 10
+@qstruct ParametricBoring{X}(x::X)
+@inferred ParametricBoring(10)
+@test ParametricBoring(10).x === 10
+
 @qstruct Kwaroo(x; y=10)
 @test Kwaroo(5) == Kwaroo(5; y=10)
 
