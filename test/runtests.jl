@@ -6,7 +6,7 @@ using Base.Test
 
 @compat abstract type Vehicle end
 
-@qimmutable Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
+@qstruct Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
                               brand::String="off-brand") <: Vehicle
 
 c = Car(10; manufacturer=("Danone", "Hershey"))
@@ -23,15 +23,11 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 # @test construct(roottypeof(c), fieldsof(c)...) == c
 @test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
 @test tuple_parameters(Tuple{Int, Float64}) == Base.Core.svec(Int64, Float64)
-if VERSION < v"0.5.100"
-    @test roottype(Pair{1,2}) == Pair
-else
-    @inferred roottypeof(1=>2) == Pair
-end
+@inferred roottypeof(1=>2) == Pair
 
 ################################################################################
 
-@qimmutable Empty()
+@qstruct Empty()
 Empty()
 
 # Used to yield:
@@ -41,12 +37,12 @@ Empty()
 
 ################################################################################
 
-@qimmutable Kwaroo(x; y=10)
+@qstruct Kwaroo(x; y=10)
 @test Kwaroo(5) == Kwaroo(5; y=10)
 
 ################################################################################
 
-@qtype Foo{T}(x::T; y=2) do
+@qmutable Foo{T}(x::T; y=2) do
     @assert x < 10
 end
 
