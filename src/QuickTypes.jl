@@ -217,7 +217,6 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                                      ? [straight_constr] : [])...))))
     construct_def =
          :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
-             $constraints
              $name($(o_constr_args...);
                    $(o_constr_kwargs...))
          end)
