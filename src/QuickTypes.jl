@@ -152,6 +152,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     constr_args = Any[]; constr_kwargs = Any[]
     o_constr_args = Any[]; o_constr_kwargs = Any[]
     new_args = Symbol[]
+    reg_kwargs = Any[] # the passed kwargs, but without _concise_show et al.
     for arg in args
         if isa(arg, Expr) && arg.head==:kw # default arguments
             fsym = get_sym(arg.args[1])
@@ -179,6 +180,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             concise_show = kwarg.args[2]::Bool
             continue
         end
+        push!(reg_kwargs, kwarg)
         push!(kwfields, kwarg.args[1])
         push!(constr_kwargs, Expr(:kw, fsym, kwarg.args[2]))
         push!(new_args, fsym)
@@ -203,7 +205,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             return new{$(type_vars...)}($(new_args...))
         end
     end
-    straight_constr = :($name($(args...); $(kwargs...)) where {$(type_vars...)} =
+    straight_constr = :($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
