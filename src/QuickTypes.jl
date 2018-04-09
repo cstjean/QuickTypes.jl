@@ -155,9 +155,16 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     reg_kwargs = Any[] # the passed kwargs, but without _concise_show et al.
     for arg in args
         arg_name, arg_type, slurp, default = splitarg(arg)
+        if slurp
+            @assert arg_type == :Any "Slurping with type arguments not supported"
+            @assert default === nothing "Slurping with default not supported"
+            arg_type = :Tuple
+            push!(constr_args, arg)
+        else
+            push!(constr_args, 
+                  default === nothing ? arg_name : Expr(:kw, arg_name, default))
+        end            
         push!(fields, :($arg_name::$arg_type))
-        push!(constr_args,
-              default === nothing ? arg_name : Expr(:kw, arg_name, default))
         push!(new_args, arg_name)
         push!(o_constr_args, arg_name)
     end
@@ -282,6 +289,7 @@ function make_parametric(typ, typ_def, args, kwargs)
     #add_type(field::Symbol) = :($field::$(new_type()))
     function add_type(field)
         name, parent_type, slurp, val = splitarg(field)
+        @assert !slurp "Slurping not supported. TODO"
         if name in special_kwargs
             return field
         elseif val==nothing
