@@ -40,6 +40,7 @@ Empty()
 @qstruct Boring(x::Int)
 @inferred Boring(10)
 @test Boring(10).x == 10
+@test Boring(10.0).x == 10   # check that convert is called correctly
 @qstruct ParametricBoring{X}(x::X; _concise_show=true)
 @inferred ParametricBoring(10)
 @test ParametricBoring(10).x === 10
