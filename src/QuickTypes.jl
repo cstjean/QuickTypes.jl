@@ -165,20 +165,20 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     define_show = nothing # see after the loop
     concise_show = false # default
     for kwarg in kwargs  # keyword arguments
-        fsym = get_sym(kwarg.args[1])::Symbol
-        if fsym == :_define_show
-            define_show = kwarg.args[2]::Bool
+        arg_name, arg_type, slurp, default = splitarg(kwarg)
+        if arg_name == :_define_show
+            define_show = default::Bool
             continue
         end
-        if fsym == :_concise_show
-            concise_show = kwarg.args[2]::Bool
+        if arg_name == :_concise_show
+            concise_show = default::Bool
             continue
         end
         push!(reg_kwargs, kwarg)
-        push!(kwfields, kwarg.args[1])
-        push!(constr_kwargs, Expr(:kw, fsym, kwarg.args[2]))
-        push!(new_args, fsym)
-        push!(o_constr_kwargs, Expr(:kw, fsym, fsym))
+        push!(kwfields, :($arg_name::$arg_type))
+        push!(constr_kwargs, Expr(:kw, arg_name, default))
+        push!(new_args, arg_name)
+        push!(o_constr_kwargs, Expr(:kw, arg_name, arg_name))
     end
     # By default, only define Base.show when there are keyword arguments --- otherwise
     # the native `show` is perfectly sufficient.
