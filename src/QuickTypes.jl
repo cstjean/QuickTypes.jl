@@ -2,7 +2,7 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk, @match
+using MacroTools: @capture, prewalk, @match, splitarg
 import Compat
 
 export @qmutable, @qstruct  # Julia 0.6
@@ -274,21 +274,6 @@ end
 # -----------------------------------------------------------------------------
 # Fully-parametric
 
-function splitarg(arg_expr)  # TODO: use the definition from MacroTools when updated 
-    split_var(arg) =
-        @match arg begin
-            ::T_ => (nothing, T)
-            name_::T_ => (name, T)
-            x_ => (arg, :Any)
-        end
-    if @capture(arg_expr, arg_ = default_)
-        @assert default !== nothing "splitarg cannot handle `nothing` as a default. Use a quoted `nothing` if possible. (MacroTools#35)"
-        return (split_var(arg)..., default)
-    else
-        return (split_var(arg_expr)..., nothing)
-    end
-end
-
 
 # Helper for qstruct_fp
 function make_parametric(typ, typ_def, args, kwargs)
@@ -302,7 +287,7 @@ function make_parametric(typ, typ_def, args, kwargs)
     end
     #add_type(field::Symbol) = :($field::$(new_type()))
     function add_type(field)
-        name, parent_type, val = splitarg(field)
+        name, parent_type, slurp, val = splitarg(field)
         if name in special_kwargs
             return field
         elseif val==nothing
