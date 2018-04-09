@@ -154,18 +154,12 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     new_args = Symbol[]
     reg_kwargs = Any[] # the passed kwargs, but without _concise_show et al.
     for arg in args
-        if isa(arg, Expr) && arg.head==:kw # default arguments
-            fsym = get_sym(arg.args[1])
-            push!(fields, arg.args[1])
-            push!(constr_args, Expr(:kw, fsym, arg.args[2]))
-            push!(new_args, fsym)
-            push!(o_constr_args, fsym)
-        else # normal arguments
-            push!(fields, arg)
-            push!(constr_args, get_sym(arg))
-            push!(new_args, get_sym(arg))
-            push!(o_constr_args, get_sym(arg))
-        end
+        arg_name, arg_type, slurp, default = splitarg(arg)
+        push!(fields, :($arg_name::$arg_type))
+        push!(constr_args,
+              default === nothing ? arg_name : Expr(:kw, arg_name, default))
+        push!(new_args, arg_name)
+        push!(o_constr_args, arg_name)
     end
     # Parse keyword-arguments
     define_show = nothing # see after the loop
