@@ -181,9 +181,16 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             concise_show = default::Bool
             continue
         end
+        if slurp
+            @assert arg_type == :Any "Slurping with type arguments not supported"
+            @assert default === nothing "Slurping with default not supported"
+            arg_type = :(Vector{Any})
+            push!(constr_kwargs, kwarg)
+        else
+            push!(constr_kwargs, Expr(:kw, arg_name, default))
+        end
         push!(reg_kwargs, kwarg)
         push!(kwfields, :($arg_name::$arg_type))
-        push!(constr_kwargs, Expr(:kw, arg_name, default))
         push!(new_args, arg_name)
         push!(o_constr_kwargs, Expr(:kw, arg_name, arg_name))
     end
