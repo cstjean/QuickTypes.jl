@@ -37,7 +37,7 @@ abstract type Tree end
 end
 ```
 
-These macros expand correctly on Julia 0.5 and 0.6.
+These macros expand correctly on Julia 0.6 and 0.7.
 
 ### More options
 
