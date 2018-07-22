@@ -55,15 +55,29 @@ type_simple_name(ty::Type)::Symbol = ty.name.name
 
 """ `parse_funcall(fcall)`
 
-Parses `fname(args; kwargs)`. Returns `(fname, args, kwargs)` """
+Parses `fname(args; kwargs)`. Returns `(fname, args, kwargs, constraints)`
+"""
 function parse_funcall(fcall)
+    if @capture(fcall, fun_(args__; kwargs__) do; constraints_ end)
+        return (fun, args, kwargs, constraints)
+    elseif @capture(fcall, fun_(args__) do; constraints_ end)
+        return (fun, args, Any[], constraints)
+    end
+
     if @capture(fcall, fun_(args__; kwargs__))
-        (fun, args, kwargs)
     elseif @capture(fcall, fun_(args__))
-        (fun, args, Any[])
+        kwargs = Any[]
     else
         error("Not a funcall: $fcall")
     end
+
+    if !isempty(args) && @capture(args[1], ()->constraints_)
+        args = args[2:end]
+    else
+        constraints = nothing
+    end
+
+    return (fun, args, kwargs, constraints)
 end
 
 function get_sym(e::Expr) 
@@ -123,13 +137,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         typ_def = def
         parent_type = :Any
     end
-    typ, args, kwargs = parse_funcall(typ_def)
-    if !isempty(args) && @capture(args[1], ()->constraints_)
-        args = args[2:end]
-        typ_def = :($typ($(args...); $(kwargs...)))
-    else
-        constraints = nothing
-    end
+    typ, args, kwargs, constraints = parse_funcall(typ_def)
+    typ_def = :($typ($(args...); $(kwargs...)))
     if fully_parametric
         typ, typ_def, args, kwargs = make_parametric(typ, typ_def, args, kwargs)
     end
@@ -151,7 +160,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     fields = Any[]; kwfields = Any[]
     constr_args = Any[]; constr_kwargs = Any[]
     o_constr_args = Any[]; o_constr_kwargs = Any[]
-    new_args = Symbol[]
+    new_args = Any[]
+    arg_names = Symbol[]
     reg_kwargs = Any[] # the passed kwargs, but without _concise_show et al.
     for arg in args
         arg_name, arg_type, slurp, default = splitarg(arg)
@@ -166,6 +176,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         end            
         push!(fields, :($arg_name::$arg_type))
         push!(new_args, arg_name)
+        push!(arg_names, arg_name)
         push!(o_constr_args, arg_name)
     end
     # Parse keyword-arguments
@@ -184,14 +195,20 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         if slurp
             @assert arg_type == :Any "Slurping with type arguments not supported"
             @assert default === nothing "Slurping with default not supported"
-            arg_type = :(Vector{Any})
+            arg_type = :(Vector{Pair})
+            if VERSION < v"0.7-"
+                push!(new_args, :([k => v for (k, v) in $arg_name]))
+            else
+                push!(new_args, :(collect(Pair, $arg_name)))
+            end
             push!(constr_kwargs, kwarg)
         else
+            push!(new_args, arg_name)
             push!(constr_kwargs, Expr(:kw, arg_name, default))
         end
         push!(reg_kwargs, kwarg)
         push!(kwfields, :($arg_name::$arg_type))
-        push!(new_args, arg_name)
+        push!(arg_names, arg_name)
         push!(o_constr_kwargs, Expr(:kw, arg_name, arg_name))
     end
     # By default, only define Base.show when there are keyword arguments --- otherwise
@@ -224,7 +241,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                                       all_type_vars_present(type_vars, [args; kwargs]))
                                      ? [straight_constr] : [])...))))
     construct_def =
-         :(function $QuickTypes.construct(::Type{$name}, $(new_args...))
+         :(function $QuickTypes.construct(::Type{$name}, $(arg_names...))
              $name($(o_constr_args...);
                    $(o_constr_kwargs...))
          end)

@@ -16,7 +16,7 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 @test c.manufacturer==("Danone", "Hershey")
 @test c.brand=="off-brand"
 # Check that the fields are in the right order
-@test fieldnames(c) == [:size, :nwheels, :manufacturer, :brand]
+@test collect(fieldnames(Car)) == [:size, :nwheels, :manufacturer, :brand]
 # This is essentially the definition of these functions.
 # This works in Julia 0.6, but not in 0.5. Since it's not part of the exported API,
 # we diable the test.
@@ -54,7 +54,7 @@ Empty()
 @qstruct Slurp(x, y=1, args...; kwargs...)
 s = Slurp(1,2,3,4,5,6,7; x=1, y=10+2)
 @test s.args == (3,4,5,6,7)
-@test s.kwargs == [(:x, 1), (:y, 12)]
+@test s.kwargs == [(:x => 1), (:y => 12)]
 
 ################################################################################
 
