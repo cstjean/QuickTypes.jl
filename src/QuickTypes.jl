@@ -127,8 +127,8 @@ function all_type_vars_present(type_vars, args)
     return isempty(s)
 end
 
-narrow_typeof{T}(t::Type{T}) = Type{T}
-narrow_typeof{T}(t::T) = T
+narrow_typeof(t::Type{T}) where {T} = Type{T}
+narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
 # narrow_types means that 
@@ -224,8 +224,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         given_types = type_vars
     end
     inner_constr = quote
-        function (::Type{$type_with_vars}){$(type_params...)}($(constr_args...);
-                                                              $(constr_kwargs...))
+        function $type_with_vars($(constr_args...);
+                                 $(constr_kwargs...)) where {$(type_params...)}
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
