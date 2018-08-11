@@ -234,7 +234,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
-        :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
+        :(Base.@__doc__ $(Expr(VERSION < v"0.7-" ? :type : :struct,
+                               mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
                                     inner_constr,
                                     ((parametric &&
