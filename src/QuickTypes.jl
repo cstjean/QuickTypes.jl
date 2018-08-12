@@ -27,8 +27,7 @@ function construct end
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
 @generated roottypeof(obj_type) = roottype(obj_type)
 """ `roottype(typ::Type)` returns the parameterless type. Eg. `roottype(X{A}) => X` """
-roottype(typ::Type) =
-    VERSION < v"0.5.100" ? typ.name.primary : Compat.TypeUtils.typename(typ).wrapper
+roottype(typ::Type) = Compat.TypeUtils.typename(typ).wrapper
 type_parameters(typ) = typ.parameters
 """ `fieldtypes(typ)` returns the types of the fields of a composite type. """
 fieldtypes(typ::Type) = # not type-stable ATM. The generated function seemed to have
@@ -127,8 +126,8 @@ function all_type_vars_present(type_vars, args)
     return isempty(s)
 end
 
-narrow_typeof{T}(t::Type{T}) = Type{T}
-narrow_typeof{T}(t::T) = T
+narrow_typeof(t::Type{T}) where {T} = Type{T}
+narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
 # narrow_types means that 
@@ -224,8 +223,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         given_types = type_vars
     end
     inner_constr = quote
-        function (::Type{$type_with_vars}){$(type_params...)}($(constr_args...);
-                                                              $(constr_kwargs...))
+        function $type_with_vars($(constr_args...);
+                                 $(constr_kwargs...)) where {$(type_params...)}
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
@@ -234,7 +233,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
-        :(Base.@__doc__ $(Expr(:type, mutable, Expr(:<:, typ, parent_type),
+        :(Base.@__doc__ $(Expr(VERSION < v"0.7-" ? :type : :struct,
+                               mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
                                     inner_constr,
                                     ((parametric &&

@@ -2,7 +2,7 @@ using Compat: @compat
 using QuickTypes
 using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
       tuple_parameters
-using Base.Test
+using Compat.Test
 
 @compat abstract type Vehicle end
 
