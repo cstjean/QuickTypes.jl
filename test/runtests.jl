@@ -91,3 +91,5 @@ convert_f(foo) = convert(foo.a, 10)
 @inferred convert_f(Foo_np(Int, 2))
 @test fieldtype(typeof(Foo_np(Int, 2)), :a) == Type{Int64}
 
+@qstruct Issue11(;no_default_value)
+@test_throws UndefKeywordError Issue11()

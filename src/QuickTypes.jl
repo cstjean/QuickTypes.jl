@@ -203,7 +203,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             push!(constr_kwargs, kwarg)
         else
             push!(new_args, arg_name)
-            push!(constr_kwargs, Expr(:kw, arg_name, default))
+            push!(constr_kwargs, 
+                  default === nothing ? arg_name : Expr(:kw, arg_name, default))
         end
         push!(reg_kwargs, kwarg)
         push!(kwfields, :($arg_name::$arg_type))
