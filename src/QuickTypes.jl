@@ -5,9 +5,8 @@ module QuickTypes
 using MacroTools: @capture, prewalk, @match, splitarg
 import Compat
 
-export @qmutable, @qstruct  # Julia 0.6
-export @qtype, @qimmutable  # Julia 0.5
-export @qmutable_fp, @qstruct_fp  # Julia 0.6
+export @qmutable, @qstruct
+export @qmutable_fp, @qstruct_fp
 export @qstruct_np, @qmutable_np
 
 const special_kwargs = [:_define_show, :_concise_show]
@@ -285,15 +284,9 @@ unless `_define_show=false` (eg. `@qstruct(x, y; _define_show=false)`).
 macro qstruct(def)
     return qexpansion(def, false, false, false)
 end
-macro qimmutable(def)  # 0.5 and below
-    return qexpansion(def, false, false, false)
-end
 
 """ Quick mutable struct definition. See ?@qstruct """
 macro qmutable(def)
-    return qexpansion(def, true, false, false)
-end
-macro qtype(def)   # 0.5 and below
     return qexpansion(def, true, false, false)
 end
 

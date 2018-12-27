@@ -18,9 +18,7 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 # Check that the fields are in the right order
 @test collect(fieldnames(Car)) == [:size, :nwheels, :manufacturer, :brand]
 # This is essentially the definition of these functions.
-# This works in Julia 0.6, but not in 0.5. Since it's not part of the exported API,
-# we diable the test.
-# @test construct(roottypeof(c), fieldsof(c)...) == c
+@test construct(roottypeof(c), fieldsof(c)...) == c
 @test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
 @test tuple_parameters(Tuple{Int, Float64}) == Base.Core.svec(Int64, Float64)
 @inferred roottypeof(1=>2) == Pair
