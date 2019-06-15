@@ -2,7 +2,7 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk, @match, splitarg
+using MacroTools: @capture, prewalk, @match, splitarg, @q
 import Compat
 
 export @qmutable, @qstruct
@@ -88,23 +88,27 @@ get_sym(e::Symbol) = e
 function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwfields)
     if !define_show && !concise_show return nothing end
 
-    :(function Base.show(io::IO, obj::$name)
-        print(io, $(concise_show ? string(name) : :(typeof(obj))))
+    @q function Base.show(io::IO, obj::$name)
+        print(io, $(concise_show ? string(name) : @q(typeof(obj))))
         write(io, "(")
         # Positional args
-        $([:(show(io, obj.$(get_sym(field)));
-             $(field==last(fields) ? nothing : :(write(io, ", "))))
+        $([@q begin
+           show(io, obj.$(get_sym(field)));
+           $(field==last(fields) ? nothing : @q(write(io, ", ")))
+           end
            for field in fields]...)
         # separating semicolon
         $(if !isempty(kwfields)
-            :(write(io, "; ")) end)
+           @q(write(io, "; ")) end)
         # Keyword args
-        $([:(write(io, $(string(get_sym(kwfield)))); write(io, "=");
-             show(io, obj.$(get_sym(kwfield)));
-             $(kwfield==last(kwfields) ? nothing : :(write(io, ", "))))
+        $([@q begin
+           write(io, $(string(get_sym(kwfield)))); write(io, "=");
+           show(io, obj.$(get_sym(kwfield)));
+           $(kwfield==last(kwfields) ? nothing : @q(write(io, ", ")))
+           end
            for kwfield in kwfields]...)
         write(io, ")")
-    end)
+    end
 end
 
 function all_type_vars_present(type_vars, args)
@@ -136,7 +140,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         parent_type = :Any
     end
     typ, args, kwargs, constraints = parse_funcall(typ_def)
-    typ_def = :($typ($(args...); $(kwargs...)))
+    typ_def = @q($typ($(args...); $(kwargs...)))
     if fully_parametric
         typ, typ_def, args, kwargs = make_parametric(typ, typ_def, args, kwargs)
     end
@@ -146,7 +150,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     if @capture(typ, name_{type_params__})
         parametric = true
         type_vars = map(get_type_var, type_params)
-        type_with_vars = :($name{$(type_vars...)})
+        type_with_vars = @q($name{$(type_vars...)})
     else
         type_vars = []
         type_params = []
@@ -172,7 +176,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             push!(constr_args, 
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
         end            
-        push!(fields, :($arg_name::$arg_type))
+        push!(fields, @q($arg_name::$arg_type))
         push!(new_args, arg_name)
         push!(arg_names, arg_name)
         push!(o_constr_args, arg_name)
@@ -193,11 +197,11 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         if slurp
             @assert arg_type == :Any "Slurping with type arguments not supported"
             @assert default === nothing "Slurping with default not supported"
-            arg_type = :(Vector{Pair})
+            arg_type = @q(Vector{Pair})
             if VERSION < v"0.7-"
-                push!(new_args, :([k => v for (k, v) in $arg_name]))
+                push!(new_args, @q([k => v for (k, v) in $arg_name]))
             else
-                push!(new_args, :(collect(Pair, $arg_name)))
+                push!(new_args, @q(collect(Pair, $arg_name)))
             end
             push!(constr_kwargs, kwarg)
         else
@@ -206,7 +210,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
         end
         push!(reg_kwargs, kwarg)
-        push!(kwfields, :($arg_name::$arg_type))
+        push!(kwfields, @q($arg_name::$arg_type))
         push!(arg_names, arg_name)
         push!(o_constr_kwargs, Expr(:kw, arg_name, arg_name))
     end
@@ -217,23 +221,22 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     # -------------- end of parsing -------------
 
     if narrow_types
-        given_types = [:($QuickTypes.narrow_typeof($a))
+        given_types = [@q($QuickTypes.narrow_typeof($a))
                        for a in (fields..., kwfields...)]
     else
         given_types = type_vars
     end
-    inner_constr = quote
-        function $type_with_vars($(constr_args...);
+    inner_constr = 
+        @q function $type_with_vars($(constr_args...);
                                  $(constr_kwargs...)) where {$(type_params...)}
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
-    end
-    straight_constr = :($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
+    straight_constr = @q($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
-        :(Base.@__doc__ $(Expr(VERSION < v"0.7-" ? :type : :struct,
+        @q(Base.@__doc__ $(Expr(VERSION < v"0.7-" ? :type : :struct,
                                mutable, Expr(:<:, typ, parent_type),
                                Expr(:block, fields..., kwfields...,
                                     inner_constr,
@@ -241,7 +244,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                                       all_type_vars_present(type_vars, [args; kwargs]))
                                      ? [straight_constr] : [])...))))
     construct_def =
-         :(function $QuickTypes.construct(::Type{$name}, $(arg_names...))
+         @q(function $QuickTypes.construct(::Type{$name}, $(arg_names...))
              $name($(o_constr_args...);
                    $(o_constr_kwargs...))
          end)
@@ -301,32 +304,32 @@ function make_parametric(typ, typ_def, args, kwargs)
     function new_type(parent)
         new_ty = Symbol(:T, type_counter)
         type_counter += 1
-        push!(all_types, :($new_ty <: $parent))
+        push!(all_types, @q($new_ty <: $parent))
         return new_ty
     end
-    #add_type(field::Symbol) = :($field::$(new_type()))
+    #add_type(field::Symbol) = @q($field::$(new_type()))
     function add_type(field)
         name, parent_type, slurp, val = splitarg(field)
         @assert !slurp "Slurping not supported. TODO"
         if name in special_kwargs
             return field
         elseif val==nothing
-            return :($name::$(new_type(parent_type)))
+            return @q($name::$(new_type(parent_type)))
         else
-            return Expr(:kw, :($name::$(new_type(parent_type))), val)
+            return Expr(:kw, @q($name::$(new_type(parent_type))), val)
         end
     end
     
     typed_args = map(add_type, args)
     typed_kwargs = map(add_type, kwargs)
-    new_typ = :($typ{$(all_types...)})
+    new_typ = @q($typ{$(all_types...)})
 
     if type_counter == 1
         # Has to special-case the "no type parameters" case because of
         # https://github.com/JuliaLang/julia/issues/20878
         return (typ, typ_def, args, kwargs)
     else
-        return (new_typ, :($new_typ($(typed_args...); $(typed_kwargs...))),
+        return (new_typ, @q($new_typ($(typed_args...); $(typed_kwargs...))),
                 typed_args, typed_kwargs)
     end
 end
