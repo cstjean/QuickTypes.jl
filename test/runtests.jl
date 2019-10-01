@@ -3,6 +3,7 @@ using QuickTypes
 using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
       tuple_parameters
 using Compat.Test
+using ConstructionBase: setproperties
 
 @compat abstract type Vehicle end
 
@@ -15,6 +16,10 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 @test c.nwheels==4
 @test c.manufacturer==("Danone", "Hershey")
 @test c.brand=="off-brand"
+c2 = setproperties(c, (size=42, nwheels=8))
+@test c2.nwheels == 8
+@test c2.size == 42
+@test c2.brand == c.brand
 # Check that the fields are in the right order
 @test collect(fieldnames(Car)) == [:size, :nwheels, :manufacturer, :brand]
 # This is essentially the definition of these functions.
@@ -27,11 +32,13 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 
 @qstruct Empty()
 Empty()
+@test setproperties(Empty(), NamedTuple()) === Empty()
 
 # Used to yield:
 #     WARNING: static parameter T does not occur in signature for Type.
 #     The method will not be callable.
 @qstruct Blah{T}()
+@test setproperties(Blah{Int}(), NamedTuple()) === Blah{Int}()
 
 ################################################################################
 
@@ -45,6 +52,8 @@ Empty()
 
 @qstruct Kwaroo(x; y=10)
 @test Kwaroo(5) == Kwaroo(5; y=10)
+pb = ParametricBoring(1)
+@test setproperties(pb, x=:one).x === :one
 
 ################################################################################
 # Slurping
