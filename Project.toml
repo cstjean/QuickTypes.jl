@@ -1,0 +1,18 @@
+name = "QuickTypes"
+uuid = "ae2dfa86-617c-530c-b392-ef20fdad97bb"
+version = "1.2.0"
+
+[deps]
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+
+[compat]
+Compat = "≥ 0.17.0"
+MacroTools = "≥ 0.3.2"
+julia = "≥ 0.7.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
