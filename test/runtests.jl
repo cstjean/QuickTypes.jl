@@ -16,7 +16,7 @@ c = Car(10; manufacturer=("Danone", "Hershey"))
 @test c.nwheels==4
 @test c.manufacturer==("Danone", "Hershey")
 @test c.brand=="off-brand"
-c2 = setproperties(c, (size=42, nwheels=8))
+c2 = @inferred setproperties(c, (size=42, nwheels=8))
 @test c2.nwheels == 8
 @test c2.size == 42
 @test c2.brand == c.brand
@@ -38,7 +38,6 @@ Empty()
 #     WARNING: static parameter T does not occur in signature for Type.
 #     The method will not be callable.
 @qstruct Blah{T}()
-@test setproperties(Blah{Int}(), NamedTuple()) === Blah{Int}()
 
 ################################################################################
 
@@ -49,11 +48,16 @@ Empty()
 @qstruct ParametricBoring{X}(x::X; _concise_show=true)
 @inferred ParametricBoring(10)
 @test ParametricBoring(10).x === 10
+o = ParametricBoring(1)
+@test setproperties(o, x=:one).x === :one
 
 @qstruct Kwaroo(x; y=10)
 @test Kwaroo(5) == Kwaroo(5; y=10)
-pb = ParametricBoring(1)
-@test setproperties(pb, x=:one).x === :one
+o = Kwaroo(5, y=10)
+o2 = @inferred setproperties(o, (x=:five, y=100.0))
+@test o2 isa Kwaroo
+@test o2.x === :five
+@test o2.y === 100.0
 
 ################################################################################
 # Slurping
@@ -62,6 +66,10 @@ pb = ParametricBoring(1)
 s = Slurp(1,2,3,4,5,6,7; x=1, y=10+2)
 @test s.args == (3,4,5,6,7)
 @test s.kwargs == [(:x => 1), (:y => 12)]
+s2 = @inferred setproperties(s, x=:hello)
+@test s2 isa Slurp
+@test s2.x == :hello
+@test s2.y == s.y
 
 ################################################################################
 
@@ -87,6 +95,12 @@ end <: Vehicle
 @test_throws TypeError Plane("happy")
 
 @qstruct_fp NoFields()   # was an error before it was special-cased
+
+o = Plane(4)
+o2 = @inferred setproperties(o, brand=10, nwheels=o.nwheels)
+@test o2 isa Plane
+@test o2.brand === 10
+@test o2.nwheels === o.nwheels
 
 ################################################################################
 # Narrowly-parametric

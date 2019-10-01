@@ -4,6 +4,7 @@ module QuickTypes
 
 using MacroTools: @capture, prewalk, @match, splitarg, @q
 import Compat
+import ConstructionBase
 
 export @qmutable, @qstruct
 export @qmutable_fp, @qstruct_fp
@@ -243,11 +244,15 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                                     ((parametric &&
                                       all_type_vars_present(type_vars, [args; kwargs]))
                                      ? [straight_constr] : [])...))))
-    construct_def =
-         @q(function $QuickTypes.construct(::Type{$name}, $(arg_names...))
+    construct_def = quote
+         function $QuickTypes.construct(::Type{$name}, $(arg_names...))
              $name($(o_constr_args...);
                    $(o_constr_kwargs...))
-         end)
+         end
+         function $QuickTypes.ConstructionBase.constructorof(::Type{<:$name})
+             (args...) -> $QuickTypes.construct($name, args...)
+         end
+     end
     esc(Expr(:toplevel,
              type_def,
              construct_def,
