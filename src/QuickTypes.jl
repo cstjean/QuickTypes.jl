@@ -3,7 +3,6 @@ __precompile__()
 module QuickTypes
 
 using MacroTools: @capture, prewalk, @match, splitarg, @q
-import Compat
 import ConstructionBase
 
 export @qmutable, @qstruct
@@ -27,7 +26,7 @@ function construct end
 `roottypeof(a::SomeType{Int}) -> SomeType{T}`. See `QuickTypes.construct` """
 @generated roottypeof(obj_type) = roottype(obj_type)
 """ `roottype(typ::Type)` returns the parameterless type. Eg. `roottype(X{A}) => X` """
-roottype(typ::Type) = Compat.TypeUtils.typename(typ).wrapper
+roottype(typ::Type) = Base.typename(typ).wrapper
 type_parameters(typ) = typ.parameters
 """ `fieldtypes(typ)` returns the types of the fields of a composite type. """
 fieldtypes(typ::Type) = # not type-stable ATM. The generated function seemed to have

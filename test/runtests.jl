@@ -1,14 +1,13 @@
-using Compat: @compat
 using QuickTypes
 using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
       tuple_parameters
-using Compat.Test
+using Test
 using ConstructionBase: setproperties
 
-@compat abstract type Vehicle end
+abstract type Vehicle end
 
 @qstruct Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
-                              brand::String="off-brand") <: Vehicle
+                           brand::String="off-brand") <: Vehicle
 
 c = Car(10; manufacturer=("Danone", "Hershey"))
 
