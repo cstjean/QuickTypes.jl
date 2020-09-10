@@ -2,12 +2,13 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk, @match, splitarg, @q
+using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef
 import ConstructionBase
 
 export @qmutable, @qstruct
 export @qmutable_fp, @qstruct_fp
 export @qstruct_np, @qmutable_np
+export @qfunctor
 
 const special_kwargs = [:_define_show, :_concise_show]
 
@@ -78,7 +79,7 @@ function parse_funcall(fcall)
     return (fun, args, kwargs, constraints)
 end
 
-function get_sym(e::Expr) 
+function get_sym(e::Expr)
     @assert e.head==:(::)
     e.args[1]
 end
@@ -133,7 +134,7 @@ narrow_typeof(t::Type{T}) where {T} = Type{T}
 narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
-# narrow_types means that 
+# narrow_types means that
 function qexpansion(def, mutable, fully_parametric, narrow_types)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
@@ -173,9 +174,9 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             arg_type = :Tuple
             push!(constr_args, arg)
         else
-            push!(constr_args, 
+            push!(constr_args,
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
-        end            
+        end
         push!(fields, @q($arg_name::$arg_type))
         push!(new_args, arg_name)
         push!(arg_names, arg_name)
@@ -198,15 +199,11 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             @assert arg_type == :Any "Slurping with type arguments not supported"
             @assert default === nothing "Slurping with default not supported"
             arg_type = @q(Vector{Pair})
-            if VERSION < v"0.7-"
-                push!(new_args, @q([k => v for (k, v) in $arg_name]))
-            else
-                push!(new_args, @q(collect(Pair, $arg_name)))
-            end
+            push!(new_args, @q(collect(Pair, $arg_name)))
             push!(constr_kwargs, kwarg)
         else
             push!(new_args, arg_name)
-            push!(constr_kwargs, 
+            push!(constr_kwargs,
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
         end
         push!(reg_kwargs, kwarg)
@@ -226,9 +223,9 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     else
         given_types = type_vars
     end
-    inner_constr = 
+    inner_constr =
         @q function $type_with_vars($(constr_args...);
-                                 $(constr_kwargs...)) where {$(type_params...)}
+                                    $(constr_kwargs...)) where {$(type_params...)}
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
@@ -236,13 +233,13 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
-        @q(Base.@__doc__ $(Expr(VERSION < v"0.7-" ? :type : :struct,
-                               mutable, Expr(:<:, typ, parent_type),
-                               Expr(:block, fields..., kwfields...,
-                                    inner_constr,
-                                    ((parametric &&
-                                      all_type_vars_present(type_vars, [args; kwargs]))
-                                     ? [straight_constr] : [])...))))
+        @q(Base.@__doc__ $(Expr(:struct,
+                                mutable, Expr(:<:, typ, parent_type),
+                                Expr(:block, fields..., kwfields...,
+                                     inner_constr,
+                                     ((parametric &&
+                                       all_type_vars_present(type_vars, [args; kwargs]))
+                                      ? [straight_constr] : [])...))))
     construct_def = quote
          function $QuickTypes.construct(::Type{$name}, $(arg_names...))
              $name($(o_constr_args...);
@@ -251,16 +248,25 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
          function $QuickTypes.ConstructionBase.constructorof(::Type{<:$name})
              (args...) -> $QuickTypes.construct($name, args...)
          end
-     end
+    end
+    @gensym obj
+    unpack_def = quote
+        macro $(Symbol(:unpack_, name))(obj_expr)
+            esc(Expr(:block,
+                     Expr(:(=), $(Expr(:quote, obj)), obj_expr),
+                     $([Expr(:quote, :($arg = $obj.$arg)) for arg in arg_names]...)))
+        end
+    end
     esc(Expr(:toplevel,
              type_def,
              construct_def,
              build_show_def(define_show, concise_show, name, fields, kwfields),
+             unpack_def,
              nothing))
 end
 
 
-""" Quick type definition. 
+""" Quick type definition.
 
 ```julia
 @qstruct Car(size, nwheels::Int=4; brand::String="unnamed") <: Vehicle
@@ -323,7 +329,7 @@ function make_parametric(typ, typ_def, args, kwargs)
             return Expr(:kw, @q($name::$(new_type(parent_type))), val)
         end
     end
-    
+
     typed_args = map(add_type, args)
     typed_kwargs = map(add_type, kwargs)
     new_typ = @q($typ{$(all_types...)})
@@ -358,6 +364,57 @@ macro qstruct_np(def)
 end
 macro qmutable_np(def)
     return qexpansion(def, true, true, true)
+end
+
+################################################################################
+# Functors
+
+"""
+```julia
+@qfunctor function Action(verb::Symbol)(what)
+     println(verb, "ing of ", what)
+end <: AbstractAction
+```
+
+is equivalent to
+
+```julia
+@qstruct Action(verb::Symbol) <: AbstractAction
+function (a::Action)(what)
+    let verb = a.verb
+        println(verb, "ing of ", what)
+    end
+end <: AbstractAction
+```
+"""
+macro qfunctor(fdef0)
+    if @capture(fdef0, A_ <: parenttype_)
+        fdef = A
+    else
+        fdef = fdef0
+        parenttype = :Any
+    end
+    di = splitdef(fdef)
+    type_def = di[:name]
+    if @capture(type_def, typename_(args__; kwargs__))
+        all_args = map(first ∘ splitarg, vcat(args, kwargs))
+    else
+        @assert @capture(type_def, typename_(args__))
+        all_args = map(first ∘ splitarg, args)
+    end
+    @gensym obj
+    di[:name] = :($obj::$typename)
+    di[:body] =
+        quote
+            # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
+            # it in the same top-level block.
+            $(Expr(:tuple, all_args...)) = $(Expr(:tuple, [:($obj.$arg) for arg in all_args]...))
+            $(di[:body])
+        end
+    esc(quote
+        $QuickTypes.@qstruct $type_def <: $parenttype
+        $(combinedef(di))
+        end)
 end
 
 end # module

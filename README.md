@@ -35,7 +35,14 @@ abstract type Tree end
 @qstruct Human(name, height::Float64) do
     @assert height > 0    # arbitrary code, executed in the constructor
 end
+
+# Functors (see ?@qfunctor for details)
+@qfunctor Adder(x::Int)(y) = x + y
+Adder(10)(20)
 ```
+
+Similar to [Parameters.jl](https://github.com/mauro3/Parameters.jl), `@qstruct Foo(x)` defines
+an `@unpack_Foo Foo(10)` which sets `x = 10`
 
 ### More options
 
