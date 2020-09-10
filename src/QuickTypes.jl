@@ -2,12 +2,13 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk, @match, splitarg, @q
+using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef
 import ConstructionBase
 
 export @qmutable, @qstruct
 export @qmutable_fp, @qstruct_fp
 export @qstruct_np, @qmutable_np
+export @qfunctor
 
 const special_kwargs = [:_define_show, :_concise_show]
 
@@ -247,11 +248,20 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
          function $QuickTypes.ConstructionBase.constructorof(::Type{<:$name})
              (args...) -> $QuickTypes.construct($name, args...)
          end
-     end
+    end
+    @gensym obj
+    unpack_def = quote
+        macro $(Symbol(:unpack_, name))(obj_expr)
+            esc(Expr(:block,
+                     Expr(:(=), $(Expr(:quote, obj)), obj_expr),
+                     $([Expr(:quote, :($arg = $obj.$arg)) for arg in arg_names]...)))
+        end
+    end
     esc(Expr(:toplevel,
              type_def,
              construct_def,
              build_show_def(define_show, concise_show, name, fields, kwfields),
+             unpack_def,
              nothing))
 end
 
@@ -354,6 +364,57 @@ macro qstruct_np(def)
 end
 macro qmutable_np(def)
     return qexpansion(def, true, true, true)
+end
+
+################################################################################
+# Functors
+
+"""
+```julia
+@qfunctor function Action(verb::Symbol)(what)
+     println(verb, "ing of ", what)
+end <: AbstractAction
+```
+
+is equivalent to
+
+```julia
+@qstruct Action(verb::Symbol) <: AbstractAction
+function (a::Action)(what)
+    let verb = a.verb
+        println(verb, "ing of ", what)
+    end
+end <: AbstractAction
+```
+"""
+macro qfunctor(fdef0)
+    if @capture(fdef0, A_ <: parenttype_)
+        fdef = A
+    else
+        fdef = fdef0
+        parenttype = :Any
+    end
+    di = splitdef(fdef)
+    type_def = di[:name]
+    if @capture(type_def, typename_(args__; kwargs__))
+        all_args = map(first ∘ splitarg, vcat(args, kwargs))
+    else
+        @assert @capture(type_def, typename_(args__))
+        all_args = map(first ∘ splitarg, args)
+    end
+    @gensym obj
+    di[:name] = :($obj::$typename)
+    di[:body] =
+        quote
+            # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
+            # it in the same top-level block.
+            $(Expr(:tuple, all_args...)) = $(Expr(:tuple, [:($obj.$arg) for arg in all_args]...))
+            $(di[:body])
+        end
+    esc(quote
+        $QuickTypes.@qstruct $type_def <: $parenttype
+        $(combinedef(di))
+        end)
 end
 
 end # module

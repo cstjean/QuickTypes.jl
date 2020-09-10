@@ -113,3 +113,12 @@ convert_f(foo) = convert(foo.a, 10)
 
 @qstruct Issue11(;no_default_value)
 @test_throws UndefKeywordError Issue11()
+
+################################################################################
+# Functors
+
+@qfunctor function Action(a; kw=100)(x)
+    return a + x + kw
+end
+
+@test Action(2)(10) == 112
