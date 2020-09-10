@@ -78,7 +78,7 @@ function parse_funcall(fcall)
     return (fun, args, kwargs, constraints)
 end
 
-function get_sym(e::Expr) 
+function get_sym(e::Expr)
     @assert e.head==:(::)
     e.args[1]
 end
@@ -133,7 +133,7 @@ narrow_typeof(t::Type{T}) where {T} = Type{T}
 narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
-# narrow_types means that 
+# narrow_types means that
 function qexpansion(def, mutable, fully_parametric, narrow_types)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
@@ -173,9 +173,9 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             arg_type = :Tuple
             push!(constr_args, arg)
         else
-            push!(constr_args, 
+            push!(constr_args,
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
-        end            
+        end
         push!(fields, @q($arg_name::$arg_type))
         push!(new_args, arg_name)
         push!(arg_names, arg_name)
@@ -198,15 +198,11 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             @assert arg_type == :Any "Slurping with type arguments not supported"
             @assert default === nothing "Slurping with default not supported"
             arg_type = @q(Vector{Pair})
-            if VERSION < v"0.7-"
-                push!(new_args, @q([k => v for (k, v) in $arg_name]))
-            else
-                push!(new_args, @q(collect(Pair, $arg_name)))
-            end
+            push!(new_args, @q(collect(Pair, $arg_name)))
             push!(constr_kwargs, kwarg)
         else
             push!(new_args, arg_name)
-            push!(constr_kwargs, 
+            push!(constr_kwargs,
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
         end
         push!(reg_kwargs, kwarg)
@@ -226,9 +222,9 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     else
         given_types = type_vars
     end
-    inner_constr = 
+    inner_constr =
         @q function $type_with_vars($(constr_args...);
-                                 $(constr_kwargs...)) where {$(type_params...)}
+                                    $(constr_kwargs...)) where {$(type_params...)}
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
@@ -236,13 +232,13 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
-        @q(Base.@__doc__ $(Expr(VERSION < v"0.7-" ? :type : :struct,
-                               mutable, Expr(:<:, typ, parent_type),
-                               Expr(:block, fields..., kwfields...,
-                                    inner_constr,
-                                    ((parametric &&
-                                      all_type_vars_present(type_vars, [args; kwargs]))
-                                     ? [straight_constr] : [])...))))
+        @q(Base.@__doc__ $(Expr(:struct,
+                                mutable, Expr(:<:, typ, parent_type),
+                                Expr(:block, fields..., kwfields...,
+                                     inner_constr,
+                                     ((parametric &&
+                                       all_type_vars_present(type_vars, [args; kwargs]))
+                                      ? [straight_constr] : [])...))))
     construct_def = quote
          function $QuickTypes.construct(::Type{$name}, $(arg_names...))
              $name($(o_constr_args...);
@@ -260,7 +256,7 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
 end
 
 
-""" Quick type definition. 
+""" Quick type definition.
 
 ```julia
 @qstruct Car(size, nwheels::Int=4; brand::String="unnamed") <: Vehicle
@@ -323,7 +319,7 @@ function make_parametric(typ, typ_def, args, kwargs)
             return Expr(:kw, @q($name::$(new_type(parent_type))), val)
         end
     end
-    
+
     typed_args = map(add_type, args)
     typed_kwargs = map(add_type, kwargs)
     new_typ = @q($typ{$(all_types...)})
