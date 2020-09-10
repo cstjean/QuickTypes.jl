@@ -70,6 +70,12 @@ s2 = @inferred setproperties(s, x=:hello)
 @test s2.x == :hello
 @test s2.y == s.y
 
+let
+    @unpack_Slurp Slurp(10)
+    @test x == 10
+    @test y == 1
+end
+
 ################################################################################
 
 @qmutable Foo{T}(x::T; y=2) do
