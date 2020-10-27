@@ -380,11 +380,11 @@ is equivalent to
 
 ```julia
 @qstruct Action(verb::Symbol) <: AbstractAction
-function (a::Action)(what)
-    let verb = a.verb
+function (__self__::Action)(what)
+    let verb = __self__.verb
         println(verb, "ing of ", what)
     end
-end <: AbstractAction
+end
 ```
 """
 macro qfunctor(fdef0)
@@ -402,13 +402,13 @@ macro qfunctor(fdef0)
         @assert @capture(type_def, typename_(args__))
         all_args = map(first ∘ splitarg, args)
     end
-    @gensym obj
-    di[:name] = :($obj::$typename)
+    di[:name] = :(__self__::$typename)
     di[:body] =
         quote
             # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
             # it in the same top-level block.
-            $(Expr(:tuple, all_args...)) = $(Expr(:tuple, [:($obj.$arg) for arg in all_args]...))
+            $(Expr(:tuple, all_args...)) =
+                $(Expr(:tuple, [:(__self__.$arg) for arg in all_args]...))
             $(di[:body])
         end
     esc(quote
