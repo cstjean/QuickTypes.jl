@@ -423,7 +423,7 @@ end
 
 macro destruct_assignment(ass)
     @assert @capture ass f_(args__) = rhs_
-    @gensym obj
+    obj = rhs isa Symbol ? rhs : gensym(string(rhs))  # to avoid having too many gensyms
     body = []
     for (i, a::Symbol) in enumerate(args)
         push!(body, :($a = $Base.getfield($obj, $i)))
@@ -455,9 +455,11 @@ macro destruct_function(fdef)
     return esc(combinedef(di))
 end
 
-macro destruct(expr)
+macro destruct(expr::Expr)
     if isdef(expr)
         esc(:($QuickTypes.@destruct_function $expr))
+    elseif expr.head == :(=)
+        esc(:($QuickTypes.@destruct_assignment $expr))
     else
         error("@destruct does not handle expressions like $expr")
     end
