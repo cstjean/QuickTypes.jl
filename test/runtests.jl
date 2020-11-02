@@ -151,3 +151,6 @@ end
 
 @destruct nested(LongerStruct(Ref(Ref(a)))) = a
 @test nested(LongerStruct(Ref(Ref(44)), 3, 4)) == 44
+
+@destruct tup_destruct(Ref((a,Ref(b)))) = (a, b)
+@test tup_destruct(Ref((1,Ref(2)))) == (1,2)

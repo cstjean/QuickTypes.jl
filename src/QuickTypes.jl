@@ -422,16 +422,19 @@ end
 # @destruct
 
 macro destruct_assignment(ass)
-    if @capture(ass, f_(args__; kwargs__) = rhs_)
+    if @capture(ass, typ_(args__; kwargs__) = rhs_)
         nothing
-    elseif @capture(ass, f_(args__) = rhs_)
+    elseif @capture(ass, typ_(args__) = rhs_)
         kwargs = []
+    elseif @capture(ass, (args__,) = rhs_)
+        kwargs = []
+        typ = Tuple
     else
         @assert @capture(ass, lhs_ = _)  # regular assignment
         @assert lhs isa Symbol
         return esc(ass)
     end
-    obj = rhs isa Symbol ? rhs : gensym(string(rhs))  # to avoid too many gensyms
+    obj = rhs isa Symbol ? rhs : gensym(:obj)  # to avoid too many gensyms
     body = []
     for (i, a) in enumerate(args)
         push!(body, :($QuickTypes.@destruct_assignment $a = $Base.getfield($obj, $i)))
@@ -442,7 +445,7 @@ macro destruct_assignment(ass)
         push!(body, :($local_var = $obj.$prop))
     end
     esc(quote
-        $obj = $rhs
+        $obj = $rhs::$typ
         $(body...)
         end)
 end
