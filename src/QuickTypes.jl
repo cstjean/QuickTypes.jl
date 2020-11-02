@@ -495,16 +495,24 @@ end
 ```
 
 This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
-can also be applied to assignments: `@destruct Ref(x) = my_ref` and can be nested:
+can also be applied to assignments: `@destruct Ref(x) := my_ref` and can be nested:
 `@destruct energy_cost(House(Landlord(name, age))) = ...`
 
 There's a short-hand synonym `@d ...` available. Use it with `using QuickTypes: @d`.
 """
 macro destruct(expr::Expr)
-    if isdef(expr)
+    if @capture(expr, lhs_ := rhs_)
+        esc(:($QuickTypes.@destruct_assignment $lhs = $rhs))
+    elseif @capture(expr, for x_ in seq_ body__ end)
+        @gensym g
+        esc(quote
+            for $g in $seq
+                $QuickTypes.@destruct_assignment $x = $g
+                $(body...)
+            end
+            end)
+    elseif isdef(expr)
         esc(:($QuickTypes.@destruct_function $expr))
-    elseif expr.head == :(=)
-        esc(:($QuickTypes.@destruct_assignment $expr))
     else
         error("@destruct does not handle expressions like $expr")
     end
@@ -512,7 +520,7 @@ end
 
 """ Short-hand for `@destruct` """
 macro d(expr)
-    :(@destruct $(esc(expr)))
+    esc(:($QuickTypes.@destruct $expr))
 end
 
 end # module

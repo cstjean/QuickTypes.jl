@@ -1,6 +1,6 @@
 using QuickTypes
 using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
-      tuple_parameters
+      tuple_parameters, @d
 using Test
 using ConstructionBase: setproperties
 
@@ -154,3 +154,10 @@ end
 
 @destruct tup_destruct(Ref((a,Ref(b)))) = (a, b)
 @test tup_destruct(Ref((1,Ref(2)))) == (1,2)
+
+@d Ref(x) := Ref(111)
+@test x == 111
+
+@destruct for (LongerStruct(Ref(xx)), Ref(yy)) in [(LongerStruct(Ref(55), 10, 20), Ref(66))]
+    @test (xx, yy) == (55, 66)
+end
