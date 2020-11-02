@@ -423,7 +423,7 @@ end
 
 macro destruct_assignment(ass)
     @assert @capture ass f_(args__) = rhs_
-    obj = rhs isa Symbol ? rhs : gensym(string(rhs))  # to avoid having too many gensyms
+    obj = rhs isa Symbol ? rhs : gensym(string(rhs))  # to avoid too many gensyms
     body = []
     for (i, a::Symbol) in enumerate(args)
         push!(body, :($a = $Base.getfield($obj, $i)))
