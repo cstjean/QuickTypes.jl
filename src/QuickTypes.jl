@@ -422,7 +422,10 @@ end
 # @destruct
 
 macro destruct_assignment(ass)
-    @assert @capture ass f_(args__) = rhs_
+    if !@capture(ass, f_(args__; kwargs__) = rhs_)
+        kwargs = []
+        @assert @capture(ass, f_(args__) = rhs_)
+    end
     obj = rhs isa Symbol ? rhs : gensym(string(rhs))  # to avoid too many gensyms
     body = []
     for (i, a::Symbol) in enumerate(args)
@@ -438,7 +441,7 @@ macro destruct_function(fdef)
     di = splitdef(fdef)
     prologue = []
     function proc_arg(a)
-        if @capture(a, f_(args__))
+        if @capture(a, f_(__))
             @gensym g
             push!(prologue, :($QuickTypes.@destruct_assignment $a = $g))
             return :($g::$f)

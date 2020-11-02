@@ -143,7 +143,8 @@ struct LongerStruct{X}
     b
     c::X
 end
-@destruct function kwfun(LongerStruct{X}(u,v)) where X
+
+@destruct function kwfun(LongerStruct{X}(u,v; c)) where X
     return u, v
 end
 
