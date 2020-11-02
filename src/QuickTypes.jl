@@ -438,7 +438,8 @@ macro destruct_assignment(ass)
     end
     for x in kwargs
         local_var, prop = @capture(x, a_ = b_) ? (a, b) : (x, x)
-        push!(body, :($local_var = $Base.getproperty($obj, $(Expr(:quote, prop::Symbol)))))
+        prop::Symbol
+        push!(body, :($local_var = $obj.$prop))
     end
     esc(quote
         $obj = $rhs

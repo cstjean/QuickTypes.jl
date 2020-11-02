@@ -151,8 +151,3 @@ end
 
 @destruct nested(LongerStruct(Ref(Ref(a)))) = a
 @test nested(LongerStruct(Ref(Ref(44)), 3, 4)) == 44
-
-
-#TODO:
-#@destruct x = Foo(x)   # have the @destruct function ... expand into that
-#@destruct x if Foo(x) ... end
