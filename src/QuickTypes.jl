@@ -9,6 +9,7 @@ export @qmutable, @qstruct
 export @qmutable_fp, @qstruct_fp
 export @qstruct_np, @qmutable_np
 export @qfunctor
+export @destruct
 
 const special_kwargs = [:_define_show, :_concise_show]
 
@@ -367,7 +368,7 @@ macro qmutable_np(def)
 end
 
 ################################################################################
-# Functors
+# @qfunctor
 
 """
 ```julia
@@ -415,6 +416,43 @@ macro qfunctor(fdef0)
         $QuickTypes.@qstruct $type_def <: $parenttype
         $(combinedef(di))
         end)
+end
+
+################################################################################
+# @destruct
+
+macro destruct_assignment(ass)
+    @assert @capture ass f_(args__) = rhs_
+    @gensym obj
+    body = []
+    for (i, a::Symbol) in enumerate(args)
+        push!(body, :($a = $Base.getfield($obj, $i)))
+    end
+    esc(quote
+        $obj = $rhs
+        $(body...)
+        end)
+end
+
+macro destruct(fdef)
+    di = splitdef(fdef)
+    prologue = []
+    function proc_arg(a)
+        if @capture(a, f_(args__))
+            @gensym g
+            push!(prologue, :($QuickTypes.@destruct_assignment $a = $g))
+            return :($g::$f)
+        else
+            return a
+        end
+    end
+    di[:args] = map(proc_arg, di[:args])
+    di[:kwargs] = map(proc_arg, get(di, :kwargs, []))
+    di[:body] = quote
+        $(prologue...)
+        $(di[:body])
+    end
+    return esc(combinedef(di))
 end
 
 end # module
