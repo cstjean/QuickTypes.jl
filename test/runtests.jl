@@ -147,8 +147,10 @@ end
 @destruct function kwfun(LongerStruct{X}(u,v; c, bof=b)) where X
     return u, v, c, bof
 end
-
 @test kwfun(LongerStruct(4,5,6)) == (4,5,6,5)
+
+@destruct nested(LongerStruct(Ref(Ref(a)))) = a
+@test nested(LongerStruct(Ref(Ref(44)), 3, 4)) == 44
 
 
 #TODO:

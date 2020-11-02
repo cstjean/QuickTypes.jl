@@ -422,14 +422,19 @@ end
 # @destruct
 
 macro destruct_assignment(ass)
-    if !@capture(ass, f_(args__; kwargs__) = rhs_)
+    if @capture(ass, f_(args__; kwargs__) = rhs_)
+        nothing
+    elseif @capture(ass, f_(args__) = rhs_)
         kwargs = []
-        @assert @capture(ass, f_(args__) = rhs_)
+    else
+        @assert @capture(ass, lhs_ = _)  # regular assignment
+        @assert lhs isa Symbol
+        return esc(ass)
     end
     obj = rhs isa Symbol ? rhs : gensym(string(rhs))  # to avoid too many gensyms
     body = []
-    for (i, a::Symbol) in enumerate(args)
-        push!(body, :($a = $Base.getfield($obj, $i)))
+    for (i, a) in enumerate(args)
+        push!(body, :($QuickTypes.@destruct_assignment $a = $Base.getfield($obj, $i)))
     end
     for x in kwargs
         local_var, prop = @capture(x, a_ = b_) ? (a, b) : (x, x)
