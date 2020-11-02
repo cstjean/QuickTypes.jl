@@ -431,6 +431,9 @@ macro destruct_assignment(ass)
     for (i, a::Symbol) in enumerate(args)
         push!(body, :($a = $Base.getfield($obj, $i)))
     end
+    for x in kwargs
+        push!(body, :($x = $Base.getproperty($obj, $(Expr(:quote, x)))))
+    end
     esc(quote
         $obj = $rhs
         $(body...)

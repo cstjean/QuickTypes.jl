@@ -145,10 +145,10 @@ struct LongerStruct{X}
 end
 
 @destruct function kwfun(LongerStruct{X}(u,v; c)) where X
-    return u, v
+    return u, v, c
 end
 
-@test kwfun(LongerStruct(4,5,6)) == (4,5)
+@test kwfun(LongerStruct(4,5,6)) == (4,5,6)
 
 
 #TODO:
