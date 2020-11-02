@@ -471,6 +471,33 @@ macro destruct_function(fdef)
     return esc(combinedef(di))
 end
 
+""" Destructuring for objects.
+
+```julia
+struct House
+    owner
+    n_windows
+end
+
+@destruct function energy_cost(House(o; n_windows))
+    ...
+end
+```
+
+becomes
+
+```julia
+@destruct function energy_cost(temp_var::House)
+    o = getfield(temp_var, 1)
+    n_windows = temp_var.n_windows
+    ...
+end
+```
+
+This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
+can also be applied to assignments: `@destruct Ref(x) = my_ref` and can be nested:
+`@destruct energy_cost(House(Landlord(name, age))) = ...`
+"""
 macro destruct(expr::Expr)
     if isdef(expr)
         esc(:($QuickTypes.@destruct_function $expr))
