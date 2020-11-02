@@ -41,9 +41,6 @@ end
 Adder(10)(20)
 ```
 
-Similar to [Parameters.jl](https://github.com/mauro3/Parameters.jl), `@qstruct Foo(x)` defines
-an `@unpack_Foo Foo(10)` which sets `x = 10`
-
 ### More options
 
 ```julia
@@ -60,9 +57,9 @@ Group([1,1+1])
 
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
 
-## Destructuring for objects
+## Destructuring over objects
 
-QuickTypes has support for destructuring over objects.
+`@destruct` can be used to destructure objects.
 
 ```julia
 struct House
@@ -71,7 +68,7 @@ struct House
 end
 
 @destruct function energy_cost(House(o; n_windows))
-    ...
+    return o == "Bob" ? 10000 : n_windows * 5
 end
 ```
 
@@ -81,7 +78,8 @@ becomes
 @destruct function energy_cost(temp_var::House)
     o = getfield(temp_var, 1)
     n_windows = temp_var.n_windows
-    ...
+
+    return o == "Bob" ? 10000 : n_windows * 5
 end
 ```
 

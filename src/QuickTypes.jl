@@ -480,7 +480,7 @@ struct House
 end
 
 @destruct function energy_cost(House(o; n_windows))
-    ...
+    return o == "Bob" ? 10000 : n_windows * 5
 end
 ```
 
@@ -490,7 +490,8 @@ becomes
 @destruct function energy_cost(temp_var::House)
     o = getfield(temp_var, 1)
     n_windows = temp_var.n_windows
-    ...
+
+    return o == "Bob" ? 10000 : n_windows * 5
 end
 ```
 
