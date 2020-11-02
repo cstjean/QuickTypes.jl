@@ -2,7 +2,7 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef
+using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef, isdef
 import ConstructionBase
 
 export @qmutable, @qstruct
@@ -434,7 +434,7 @@ macro destruct_assignment(ass)
         end)
 end
 
-macro destruct(fdef)
+macro destruct_function(fdef)
     di = splitdef(fdef)
     prologue = []
     function proc_arg(a)
@@ -453,6 +453,14 @@ macro destruct(fdef)
         $(di[:body])
     end
     return esc(combinedef(di))
+end
+
+macro destruct(expr)
+    if isdef(expr)
+        esc(:($QuickTypes.@destruct_function $expr))
+    else
+        error("@destruct does not handle expressions like $expr")
+    end
 end
 
 end # module
