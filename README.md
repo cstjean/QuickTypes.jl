@@ -84,7 +84,7 @@ end
 ```
 
 This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
-can also be applied to assignments with `@destruct Ref(x) := ...`, for loops, and can be nested:
+can also be applied to assignments with `@destruct Ref(x) := ...` and `for` loops. It can be nested:
 `@destruct energy_cost(House(Landlord(name, age))) = ...`
 
 `@d ...` is a synonym for `@destruct`. Import it with `using QuickTypes: @d`.
