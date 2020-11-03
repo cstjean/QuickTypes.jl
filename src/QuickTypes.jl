@@ -404,6 +404,9 @@ macro qfunctor(fdef0)
         all_args = map(first ∘ splitarg, args)
     end
     di[:name] = :(__self__::$typename)
+    if @capture(type_def, tname_{Ts__}(__))
+        di[:whereparams] = tuple(Ts..., get(di, :whereparams, ())...)
+    end
     di[:body] =
         quote
             # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use

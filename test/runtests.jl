@@ -129,6 +129,9 @@ end
 
 @test Action(2)(10) == 112
 
+@qfunctor ParamAction{X}(a::X)(b::T) where T = (a, b, X, T)
+@test ParamAction(1)(2.0) == (1, 2.0, Int, Float64)
+
 ################################################################################
 # @destruct
 
