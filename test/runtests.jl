@@ -161,3 +161,6 @@ end
 @destruct for (LongerStruct(Ref(xx)), Ref(yy)) in [(LongerStruct(Ref(55), 10, 20), Ref(66))]
     @test (xx, yy) == (55, 66)
 end
+
+@d LongerStruct(x)(y) = (x, y)
+@test LongerStruct(10, 20, 30)(5) == (10, 5)

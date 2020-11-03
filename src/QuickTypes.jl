@@ -462,6 +462,7 @@ macro destruct_function(fdef)
             return a
         end
     end
+    di[:name] = proc_arg(di[:name])     # handle callable objects
     di[:args] = map(proc_arg, di[:args])
     di[:kwargs] = map(proc_arg, get(di, :kwargs, []))
     di[:body] = quote
