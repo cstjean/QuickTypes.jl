@@ -1,6 +1,6 @@
 using QuickTypes
 using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
-      tuple_parameters
+      tuple_parameters, @d
 using Test
 using ConstructionBase: setproperties
 
@@ -121,10 +121,43 @@ convert_f(foo) = convert(foo.a, 10)
 @test_throws UndefKeywordError Issue11()
 
 ################################################################################
-# Functors
+# @qfunctor
 
 @qfunctor function Action(a; kw=100)(x)
     return a + x + kw
 end
 
 @test Action(2)(10) == 112
+
+################################################################################
+# @destruct
+
+@destruct foo(Ref(x)) = x+2
+@destruct foo(Ref{Float64}(x)) = x+10
+@test foo(Ref(10)) == 12
+@test foo(Ref(10.0)) == 20
+@destruct foo(a, (Ref{T} where T)(x)) = a + x
+
+struct LongerStruct{X}
+    a
+    b
+    c::X
+end
+
+@destruct function kwfun(LongerStruct{X}(u,v; c, bof=b)) where X
+    return u, v, c, bof
+end
+@test kwfun(LongerStruct(4,5,6)) == (4,5,6,5)
+
+@destruct nested(LongerStruct(Ref(Ref(a)))) = a
+@test nested(LongerStruct(Ref(Ref(44)), 3, 4)) == 44
+
+@destruct tup_destruct(Ref((a,Ref(b)))) = (a, b)
+@test tup_destruct(Ref((1,Ref(2)))) == (1,2)
+
+@d Ref(x) := Ref(111)
+@test x == 111
+
+@destruct for (LongerStruct(Ref(xx)), Ref(yy)) in [(LongerStruct(Ref(55), 10, 20), Ref(66))]
+    @test (xx, yy) == (55, 66)
+end

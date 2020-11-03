@@ -41,9 +41,6 @@ end
 Adder(10)(20)
 ```
 
-Similar to [Parameters.jl](https://github.com/mauro3/Parameters.jl), `@qstruct Foo(x)` defines
-an `@unpack_Foo Foo(10)` which sets `x = 10`
-
 ### More options
 
 ```julia
@@ -59,3 +56,35 @@ Group([1,1+1])
 ```
 
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
+
+## Destructuring over objects
+
+`@destruct` can be used to destructure objects.
+
+```julia
+struct House
+    owner
+    n_windows
+end
+
+@destruct function energy_cost(House(o; n_windows))
+    return o == "Bob" ? 10000 : n_windows * 5
+end
+```
+
+becomes
+
+```julia
+@destruct function energy_cost(temp_var::House)
+    o = getfield(temp_var, 1)
+    n_windows = temp_var.n_windows
+
+    return o == "Bob" ? 10000 : n_windows * 5
+end
+```
+
+This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
+can also be applied to assignments with `@destruct Ref(x) := ...` and `for` loops. It can be nested:
+`@destruct energy_cost(House(Landlord(name, age))) = ...`
+
+`@d ...` is a synonym for `@destruct`. Import it with `using QuickTypes: @d`.

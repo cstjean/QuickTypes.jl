@@ -2,13 +2,14 @@ __precompile__()
 
 module QuickTypes
 
-using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef
+using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef, isdef
 import ConstructionBase
 
 export @qmutable, @qstruct
 export @qmutable_fp, @qstruct_fp
 export @qstruct_np, @qmutable_np
 export @qfunctor
+export @destruct
 
 const special_kwargs = [:_define_show, :_concise_show]
 
@@ -367,7 +368,7 @@ macro qmutable_np(def)
 end
 
 ################################################################################
-# Functors
+# @qfunctor
 
 """
 ```julia
@@ -415,6 +416,112 @@ macro qfunctor(fdef0)
         $QuickTypes.@qstruct $type_def <: $parenttype
         $(combinedef(di))
         end)
+end
+
+################################################################################
+# @destruct
+
+macro destruct_assignment(ass)
+    if @capture(ass, typ_(args__; kwargs__) = rhs_)
+        nothing
+    elseif @capture(ass, typ_(args__) = rhs_)
+        kwargs = []
+    elseif @capture(ass, (args__,) = rhs_)
+        kwargs = []
+        typ = Tuple
+    else
+        @assert @capture(ass, lhs_ = _)  # regular assignment
+        @assert lhs isa Symbol
+        return esc(ass)
+    end
+    obj = rhs isa Symbol ? rhs : gensym(:obj)  # to avoid too many gensyms
+    body = []
+    for (i, a) in enumerate(args)
+        push!(body, :($QuickTypes.@destruct_assignment $a = $Base.getfield($obj, $i)))
+    end
+    for x in kwargs
+        local_var, prop = @capture(x, a_ = b_) ? (a, b) : (x, x)
+        prop::Symbol
+        push!(body, :($local_var = $obj.$prop))
+    end
+    esc(quote
+        $obj = $rhs::$typ
+        $(body...)
+        end)
+end
+
+macro destruct_function(fdef)
+    di = splitdef(fdef)
+    prologue = []
+    function proc_arg(a)
+        if @capture(a, f_(__))
+            @gensym g
+            push!(prologue, :($QuickTypes.@destruct_assignment $a = $g))
+            return :($g::$f)
+        else
+            return a
+        end
+    end
+    di[:args] = map(proc_arg, di[:args])
+    di[:kwargs] = map(proc_arg, get(di, :kwargs, []))
+    di[:body] = quote
+        $(prologue...)
+        $(di[:body])
+    end
+    return esc(combinedef(di))
+end
+
+""" Destructuring for objects.
+
+```julia
+struct House
+    owner
+    n_windows
+end
+
+@destruct function energy_cost(House(o; n_windows))
+    return o == "Bob" ? 10000 : n_windows * 5
+end
+```
+
+becomes
+
+```julia
+@destruct function energy_cost(temp_var::House)
+    o = getfield(temp_var, 1)
+    n_windows = temp_var.n_windows
+
+    return o == "Bob" ? 10000 : n_windows * 5
+end
+```
+
+This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
+can also be applied to assignments with `@destruct Ref(x) := ...` and `for` loops. It can be nested:
+`@destruct energy_cost(House(Landlord(name, age))) = ...`
+
+`@d ...` is a synonym for `@destruct`. Import it with `using QuickTypes: @d`.
+"""
+macro destruct(expr::Expr)
+    if @capture(expr, lhs_ := rhs_)
+        esc(:($QuickTypes.@destruct_assignment $lhs = $rhs))
+    elseif @capture(expr, for x_ in seq_ body__ end)
+        @gensym g
+        esc(quote
+            for $g in $seq
+                $QuickTypes.@destruct_assignment $x = $g
+                $(body...)
+            end
+            end)
+    elseif isdef(expr)
+        esc(:($QuickTypes.@destruct_function $expr))
+    else
+        error("@destruct does not handle expressions like $expr")
+    end
+end
+
+""" Short-hand for `@destruct` """
+macro d(expr)
+    esc(:($QuickTypes.@destruct $expr))
 end
 
 end # module
