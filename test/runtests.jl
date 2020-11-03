@@ -164,3 +164,5 @@ end
 
 @d LongerStruct(x)(y) = (x, y)
 @test LongerStruct(10, 20, 30)(5) == (10, 5)
+
+@test @d((Ref(x), Ref(y)) -> x+2)(Ref(10), Ref(20)) == 12

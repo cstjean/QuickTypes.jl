@@ -462,7 +462,9 @@ macro destruct_function(fdef)
             return a
         end
     end
-    di[:name] = proc_arg(di[:name])     # handle callable objects
+    if haskey(di, :name) # anonymous functions don't have names
+        di[:name] = proc_arg(di[:name])     # handle callable objects
+    end
     di[:args] = map(proc_arg, di[:args])
     di[:kwargs] = map(proc_arg, get(di, :kwargs, []))
     di[:body] = quote
