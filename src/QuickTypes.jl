@@ -408,7 +408,7 @@ macro qfunctor(fdef0)
         di[:whereparams] = tuple(Ts..., get(di, :whereparams, ())...)
     end
     di[:body] =
-        quote
+        @q begin
             # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
             # it in the same top-level block.
             $(Expr(:tuple, all_args...)) =
@@ -447,7 +447,7 @@ macro destruct_assignment(ass)
         prop::Symbol
         push!(body, :($local_var = $obj.$prop))
     end
-    esc(quote
+    esc(@q begin
         $obj = $rhs::$typ
         $(body...)
         end)
@@ -470,7 +470,7 @@ macro destruct_function(fdef)
     end
     di[:args] = map(proc_arg, di[:args])
     di[:kwargs] = map(proc_arg, get(di, :kwargs, []))
-    di[:body] = quote
+    di[:body] = @q begin
         $(prologue...)
         $(di[:body])
     end
@@ -512,7 +512,7 @@ macro destruct(expr::Expr)
         esc(:($QuickTypes.@destruct_assignment $lhs = $rhs))
     elseif @capture(expr, for x_ in seq_ body__ end)
         @gensym g
-        esc(quote
+        esc(@q begin
             for $g in $seq
                 $QuickTypes.@destruct_assignment $x = $g
                 $(body...)
