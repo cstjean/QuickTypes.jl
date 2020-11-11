@@ -90,26 +90,28 @@ get_sym(e::Symbol) = e
 function build_show_def(define_show::Bool, concise_show::Bool, name, fields, kwfields)
     if !define_show && !concise_show return nothing end
 
-    @q function Base.show(io::IO, obj::$name)
-        print(io, $(concise_show ? string(name) : @q(typeof(obj))))
-        write(io, "(")
-        # Positional args
-        $([@q begin
-           show(io, obj.$(get_sym(field)));
-           $(field==last(fields) ? nothing : @q(write(io, ", ")))
-           end
-           for field in fields]...)
-        # separating semicolon
-        $(if !isempty(kwfields)
-           @q(write(io, "; ")) end)
-        # Keyword args
-        $([@q begin
-           write(io, $(string(get_sym(kwfield)))); write(io, "=");
-           show(io, obj.$(get_sym(kwfield)));
-           $(kwfield==last(kwfields) ? nothing : @q(write(io, ", ")))
-           end
-           for kwfield in kwfields]...)
-        write(io, ")")
+    quote
+        function Base.show(io::IO, obj::$name)
+            print(io, $(concise_show ? string(name) : @q(typeof(obj))))
+            write(io, "(")
+            # Positional args
+            $([@q begin
+               show(io, obj.$(get_sym(field)));
+               $(field==last(fields) ? nothing : @q(write(io, ", ")))
+               end
+               for field in fields]...)
+            # separating semicolon
+            $(if !isempty(kwfields)
+              @q(write(io, "; ")) end)
+            # Keyword args
+            $([@q begin
+               write(io, $(string(get_sym(kwfield)))); write(io, "=");
+               show(io, obj.$(get_sym(kwfield)));
+               $(kwfield==last(kwfields) ? nothing : @q(write(io, ", ")))
+               end
+               for kwfield in kwfields]...)
+            write(io, ")")
+        end
     end
 end
 
@@ -224,23 +226,26 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
     else
         given_types = type_vars
     end
-    inner_constr =
-        @q function $type_with_vars($(constr_args...);
-                                    $(constr_kwargs...)) where {$(type_params...)}
+    inner_constr = quote
+        function $type_with_vars($(constr_args...);
+                                 $(constr_kwargs...)) where {$(type_params...)}
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
-    straight_constr = @q($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
+    end
+    straight_constr = :($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
                         $name{$(given_types...)}($(o_constr_args...);
                                                  $(o_constr_kwargs...)))
     type_def =
-        @q(Base.@__doc__ $(Expr(:struct,
-                                mutable, Expr(:<:, typ, parent_type),
-                                Expr(:block, fields..., kwfields...,
-                                     inner_constr,
-                                     ((parametric &&
-                                       all_type_vars_present(type_vars, [args; kwargs]))
-                                      ? [straight_constr] : [])...))))
+        quote
+            Base.@__doc__ $(Expr(:struct,
+                                 mutable, Expr(:<:, typ, parent_type),
+                                 Expr(:block, fields..., kwfields...,
+                                      inner_constr,
+                                      ((parametric &&
+                                        all_type_vars_present(type_vars, [args; kwargs]))
+                                       ? [straight_constr] : [])...)))
+        end
     construct_def = quote
          function $QuickTypes.construct(::Type{$name}, $(arg_names...))
              $name($(o_constr_args...);
