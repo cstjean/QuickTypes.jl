@@ -76,6 +76,14 @@ let
     @test y == 1
 end
 
+# Slurping (parametric case)
+
+@qstruct SlurpParam{T}(x::AbstractVector{T}, y=1, args...; kwargs...)
+s = SlurpParam([1,2,3,4,5,6,7], 8, 9,10; x=1, y=10+2)
+@test s.args == (9,10)
+@test s.kwargs == [(:x => 1), (:y => 12)]
+
+
 ################################################################################
 
 @qmutable Foo{T}(x::T; y=2) do

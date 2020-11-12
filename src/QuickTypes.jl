@@ -174,14 +174,15 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             @assert default === nothing "Slurping with default not supported"
             arg_type = :Tuple
             push!(constr_args, arg)
+            push!(o_constr_args, arg)
         else
             push!(constr_args,
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
+            push!(o_constr_args, arg_name)
         end
         push!(fields, @q($arg_name::$arg_type))
         push!(new_args, arg_name)
         push!(arg_names, arg_name)
-        push!(o_constr_args, arg_name)
     end
     # Parse keyword-arguments
     define_show = nothing # see after the loop
@@ -202,15 +203,16 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
             arg_type = @q(Vector{Pair})
             push!(new_args, @q(collect(Pair, $arg_name)))
             push!(constr_kwargs, kwarg)
+            push!(o_constr_kwargs, kwarg)
         else
             push!(new_args, arg_name)
             push!(constr_kwargs,
                   default === nothing ? arg_name : Expr(:kw, arg_name, default))
+            push!(o_constr_kwargs, Expr(:kw, arg_name, arg_name))
         end
         push!(reg_kwargs, kwarg)
         push!(kwfields, @q($arg_name::$arg_type))
         push!(arg_names, arg_name)
-        push!(o_constr_kwargs, Expr(:kw, arg_name, arg_name))
     end
     # By default, only define Base.show when there are keyword arguments --- otherwise
     # the native `show` is perfectly sufficient.
