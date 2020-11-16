@@ -439,7 +439,6 @@ macro destruct_assignment(ass)
         typ = Tuple
     else
         @assert @capture(ass, lhs_ = _)  # regular assignment
-        @assert lhs isa Symbol
         return esc(ass)
     end
     obj = rhs isa Symbol ? rhs : gensym(:obj)  # to avoid too many gensyms
@@ -509,6 +508,16 @@ end
 This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
 can also be applied to assignments with `@destruct Ref(x) := ...` and `for` loops. It can be nested:
 `@destruct energy_cost(House(Landlord(name, age))) = ...`
+
+Type annotations on fields _do not participate in dispatch_, but are instead conversion types.
+
+```julia
+julia> @d foo(Ref(a::Int)) = a
+foo (generic function with 1 method)
+
+julia> foo(Ref(2.0))
+2  # not 2.0
+```
 
 `@d ...` is a synonym for `@destruct`. Import it with `using QuickTypes: @d`.
 """

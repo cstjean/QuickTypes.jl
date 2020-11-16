@@ -169,3 +169,7 @@ end
 @test LongerStruct(10, 20, 30)(5) == (10, 5)
 
 @test @d((Ref(x), Ref(y)) -> x+2)(Ref(10), Ref(20)) == 12
+
+@d with_type(Ref(a::Int)) = a
+@test with_type(Ref(1)) === 1
+@test with_type(Ref(2.0)) === 2   # This is not necessarily _desirable_, but it's reasonable...
