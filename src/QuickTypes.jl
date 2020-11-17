@@ -511,7 +511,7 @@ This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)
 can also be applied to assignments with `@destruct Ref(x) := ...` and `for` loops. It can be nested:
 `@destruct energy_cost(House(Landlord(name, age))) = ...`
 
-Type annotations on fields _do not participate in dispatch_, but are instead conversion types.
+Type annotations on fields _do not participate in dispatch_, but are instead converted to.
 
 ```julia
 julia> @d foo(Ref(a::Int)) = a

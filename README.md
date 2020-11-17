@@ -57,9 +57,9 @@ Group([1,1+1])
 
 See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
 
-## Destructuring over objects
+## Destructuring objects
 
-`@destruct` can be used to destructure objects.
+`@destruct` is used to destructure objects.
 
 ```julia
 struct House
@@ -86,5 +86,15 @@ end
 This enables syntax like `@destruct mean_price(DataFrame(; price)) = mean(price)`. Destructuring
 can also be applied to assignments with `@destruct Ref(x) := ...` and `for` loops. It can be nested:
 `@destruct energy_cost(House(Landlord(name, age))) = ...`
+
+Type annotations on fields _do not participate in dispatch_, but are instead converted to.
+
+```julia
+julia> @d foo(Ref(a::Int)) = a
+foo (generic function with 1 method)
+
+julia> foo(Ref(2.0))
+2  # not 2.0
+```
 
 `@d ...` is a synonym for `@destruct`. Import it with `using QuickTypes: @d`.
