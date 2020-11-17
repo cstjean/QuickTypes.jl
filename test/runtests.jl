@@ -64,7 +64,7 @@ o2 = @inferred setproperties(o, (x=:five, y=100.0))
 @qstruct Slurp(x, y=1, args...; kwargs...)
 s = Slurp(1,2,3,4,5,6,7; x=1, y=10+2)
 @test s.args == (3,4,5,6,7)
-@test s.kwargs == [(:x => 1), (:y => 12)]
+@test s.kwargs == pairs((x=1, y=12))
 s2 = @inferred setproperties(s, x=:hello)
 @test s2 isa Slurp
 @test s2.x == :hello
@@ -75,6 +75,14 @@ let
     @test x == 10
     @test y == 1
 end
+
+# Slurping (parametric case)
+
+@qstruct SlurpParam{T}(x::AbstractVector{T}, y=1, args...; kwargs...)
+s = SlurpParam([1,2,3,4,5,6,7], 8, 9,10; x=1, y=10+2)
+@test s.args == (9,10)
+@test s.kwargs == pairs((x=1, y=12))
+
 
 ################################################################################
 
