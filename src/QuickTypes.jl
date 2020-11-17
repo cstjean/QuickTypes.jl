@@ -200,8 +200,8 @@ function qexpansion(def, mutable, fully_parametric, narrow_types)
         if slurp
             @assert arg_type == :Any "Slurping with type arguments not supported"
             @assert default === nothing "Slurping with default not supported"
-            arg_type = @q(Vector{Pair})
-            push!(new_args, @q(collect(Pair, $arg_name)))
+            arg_type = Base.Iterators.Pairs
+            push!(new_args, arg_name)
             push!(constr_kwargs, kwarg)
             push!(o_constr_kwargs, kwarg)
         else
