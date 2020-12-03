@@ -431,6 +431,9 @@ end
 ################################################################################
 # @destruct
 
+""" Implement this function for objects that aren't meant to be destructured. Throw an error. """
+check_destructurable(x) = nothing
+
 macro destruct_assignment(ass)
     if @capture(ass, typ_(args__; kwargs__) = rhs_)
         nothing
@@ -455,6 +458,7 @@ macro destruct_assignment(ass)
     end
     esc(@q begin
         $obj = $rhs::$typ
+        $QuickTypes.check_destructurable($obj)
         $(body...)
         end)
 end

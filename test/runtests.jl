@@ -181,3 +181,13 @@ end
 @d with_type(Ref(a::Int)) = a
 @test with_type(Ref(1)) === 1
 @test with_type(Ref(2.0)) === 2   # This is not necessarily _desirable_, but it's reasonable...
+
+struct NotDestruct
+    a
+end
+@qstruct MyException()
+QuickTypes.check_destructurable(::NotDestruct) = throw(MyException())
+
+@d dontdestruct(NotDestruct(x)) = x
+
+@test_throws MyException dontdestruct(NotDestruct(x))
