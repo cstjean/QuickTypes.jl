@@ -503,7 +503,7 @@ end
 becomes
 
 ```julia
-@destruct function energy_cost(temp_var::House)
+function energy_cost(temp_var::House)
     o = getfield(temp_var, 1)
     n_windows = temp_var.n_windows
 
