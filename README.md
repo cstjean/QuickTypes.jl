@@ -64,6 +64,7 @@ See also [Parameters.jl](https://github.com/mauro3/Parameters.jl).
 ```julia
 struct House
     owner
+    price
     n_windows
 end
 
@@ -76,7 +77,7 @@ becomes
 
 ```julia
 function energy_cost(temp_var::House)
-    o = getfield(temp_var, 1)
+    o = getfield(temp_var, 1)         # get the first field
     n_windows = temp_var.n_windows
 
     return o == "Bob" ? 10000 : n_windows * 5
