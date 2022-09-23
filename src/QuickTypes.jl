@@ -394,13 +394,15 @@ function (__self__::Action)(what)
     end
 end
 ```
+
+Note that if no parent type is specified, `<: Function` is used.
 """
 macro qfunctor(fdef0)
     if @capture(fdef0, A_ <: parenttype_)
         fdef = A
     else
         fdef = fdef0
-        parenttype = :Any
+        parenttype = :($Base.Function)
     end
     di = splitdef(fdef)
     type_def = di[:name]
