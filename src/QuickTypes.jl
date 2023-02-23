@@ -138,7 +138,7 @@ narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
 # narrow_types means that
-function qexpansion(def, mutable, fully_parametric, narrow_types)
+function qexpansion(def::Expr, mutable::Bool, fully_parametric::Bool, narrow_types::Bool)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
