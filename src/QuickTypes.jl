@@ -381,6 +381,9 @@ end
 abstract type QFunctor <: Function end
 
 Base.show(io::IO, mime::MIME"text/plain", qf::QFunctor) =
+    # Without this method, functors print like functions, i.e.
+    #     (::Foo) (generic function with 1 methods)
+    # which is bothersome because the fields don't show up.
     Base.@invoke(Base.show(io::typeof(io), mime::typeof(mime), qf::Any))
 
 """
