@@ -139,6 +139,11 @@ end
 
 @qfunctor ParamAction{X}(a::X)(b::T) where T = (a, b, X, T)
 @test ParamAction(1)(2.0) == (1, 2.0, Int, Float64)
+@test string(ParamAction(1)) == "ParamAction{Int64}(1)"
+
+io = IOBuffer();
+show(io, MIME"text/plain"(), ParamAction(1))
+@test String(take!(io)) == "ParamAction{Int64}(1)"
 
 ################################################################################
 # @destruct

@@ -377,6 +377,12 @@ end
 ################################################################################
 # @qfunctor
 
+""" Abstract type for qfunctors. Was introduced to improve printing of QFunctor """
+abstract type QFunctor <: Function end
+
+Base.show(io::IO, mime::MIME"text/plain", qf::QFunctor) =
+    Base.@invoke(Base.show(io::typeof(io), mime::typeof(mime), qf::Any))
+
 """
 ```julia
 @qfunctor function Action(verb::Symbol)(what)
@@ -402,7 +408,7 @@ macro qfunctor(fdef0)
         fdef = A
     else
         fdef = fdef0
-        parenttype = :($Base.Function)
+        parenttype = :($QFunctor)
     end
     di = splitdef(fdef)
     type_def = di[:name]
