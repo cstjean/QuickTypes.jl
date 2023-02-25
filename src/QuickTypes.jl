@@ -138,7 +138,7 @@ narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
 # narrow_types means that
-function qexpansion(def, mutable, fully_parametric, narrow_types)
+function qexpansion(def::Expr, mutable::Bool, fully_parametric::Bool, narrow_types::Bool)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
@@ -377,6 +377,15 @@ end
 ################################################################################
 # @qfunctor
 
+""" Abstract type for qfunctors. Was introduced to improve printing of QFunctor """
+abstract type QFunctor <: Function end
+
+Base.show(io::IO, mime::MIME"text/plain", qf::QFunctor) =
+    # Without this method, functors print like functions, i.e.
+    #     (::Foo) (generic function with 1 methods)
+    # which is bothersome because the fields don't show up.
+    Base.@invoke(Base.show(io::typeof(io), mime::typeof(mime), qf::Any))
+
 """
 ```julia
 @qfunctor function Action(verb::Symbol)(what)
@@ -402,7 +411,7 @@ macro qfunctor(fdef0)
         fdef = A
     else
         fdef = fdef0
-        parenttype = :($Base.Function)
+        parenttype = :($QFunctor)
     end
     di = splitdef(fdef)
     type_def = di[:name]
