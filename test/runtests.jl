@@ -145,6 +145,16 @@ io = IOBuffer();
 show(io, MIME"text/plain"(), ParamAction(1))
 @test String(take!(io)) == "ParamAction{Int64}(1)"
 
+@qfunctor Bus(x)(y) <: Real = 2
+@test Bus(2) isa Real
+
+@qfunctor function Tractor(x)(p) <: Number
+    x+p
+end
+
+@test Tractor(9)(3) == 12
+@test Tractor(9) isa Number
+
 ################################################################################
 # @destruct
 

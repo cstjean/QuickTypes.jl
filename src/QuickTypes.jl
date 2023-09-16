@@ -409,11 +409,17 @@ Note that if no parent type is specified, `<: Function` is used.
 macro qfunctor(fdef0)
     if @capture(fdef0, A_ <: parenttype_)
         fdef = A
+    elseif @capture(fdef0, A_ <: parenttype_ = rhs_)
+        fdef = :($A = $rhs)
     else
         fdef = fdef0
         parenttype = :($QFunctor)
     end
     di = splitdef(fdef)
+    if @capture(di[:body], begin <:ptype_; restofbody__ end) # function Foo(x)(k) <: P ... end
+        parenttype = ptype
+        di[:body] = Expr(:block, restofbody...)
+    end
     type_def = di[:name]
     if @capture(type_def, typename_(args__; kwargs__))
         all_args = map(first ∘ splitarg, vcat(args, kwargs))
