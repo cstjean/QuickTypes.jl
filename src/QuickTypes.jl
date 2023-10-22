@@ -1,5 +1,3 @@
-__precompile__()
-
 module QuickTypes
 
 using MacroTools: @capture, prewalk, @match, splitarg, @q, splitdef, combinedef, isdef
