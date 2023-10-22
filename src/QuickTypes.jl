@@ -31,7 +31,7 @@ type_parameters(typ) = typ.parameters
 """ `fieldtypes(typ)` returns the types of the fields of a composite type. """
 fieldtypes(typ::Type) = # not type-stable ATM. The generated function seemed to have
                         # fieldnames return [] for some reason. Maybe I should try
-                        # (fieldtype(typ, 1), fieldtype(typ, 2), ...)
+                        # (fieldtype(typ, 1), fieldtype(typ, 2), ...) with `ntuple`
     tuple((fieldtype(typ, f) for f in fieldnames(typ))...)
 """ `tuple_parameters{T<:Tuple}(::Type{T})` returns the type of each element of the
 tuple, as `svec(type1, type2, ...)` """
