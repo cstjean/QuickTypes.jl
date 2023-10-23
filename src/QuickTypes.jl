@@ -433,8 +433,7 @@ macro qfunctor(fdef0)
         @q begin
             # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
             # it in the same top-level block.
-            $(Expr(:tuple, all_args...)) =
-                $(Expr(:tuple, [:(__self__.$arg) for arg in all_args]...))
+            $(Expr(:tuple, Expr(:parameters, all_args...))) = __self__  # named-tuple destructuring
             $(di[:body])
         end
     esc(quote
