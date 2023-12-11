@@ -4,6 +4,10 @@ using QuickTypes: construct, roottypeof, fieldsof, type_parameters, roottype,
 using Test
 using ConstructionBase: setproperties
 
+""" Test that the @which returns the source of the @qstruct macro call, instead of
+None/QuickTypes.jl """
+is_defined_in_runtest(method::Method) = occursin("runtests.jl", string(method.file))
+
 abstract type Vehicle end
 
 @qstruct Car{T<:Number, U}(size::T, nwheels::Int=4; manufacturer::U=nothing,
@@ -134,8 +138,7 @@ convert_f(foo) = convert(foo.a, 10)
 @qfunctor function Action(a; kw=100)(x)
     return a + x + kw
 end
-# Test that the
-@test occursin("runtests.jl", string(which(Action(1), Tuple{Int}).file))
+@test is_defined_in_runtest(which(Action(1), Tuple{Int}))
 
 @test Action(2)(10) == 112
 

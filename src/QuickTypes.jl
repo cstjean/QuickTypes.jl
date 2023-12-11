@@ -430,12 +430,13 @@ macro qfunctor(fdef0)
         di[:whereparams] = tuple(Ts..., get(di, :whereparams, ())...)
     end
     di[:body] =
-        Expr(:block,  # written as Expr(:block, __source__) to have correct line numbers
-             __source__,
-             # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
-             # it in the same top-level block.
-             :($(Expr(:tuple, Expr(:parameters, all_args...))) = __self__),#namedtuple destructuring
-             di[:body])
+        @q begin
+            $__source__
+            # I wish I could have used @unpack_Foo, but it seems we can't define a macro and use
+            # it in the same top-level block.
+            $(Expr(:tuple, Expr(:parameters, all_args...))) = __self__ # namedtuple destructuring
+            $(di[:body])
+        end
     esc(quote
         $QuickTypes.@qstruct $type_def <: $parenttype
         $(combinedef(di))
