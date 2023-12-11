@@ -134,6 +134,8 @@ convert_f(foo) = convert(foo.a, 10)
 @qfunctor function Action(a; kw=100)(x)
     return a + x + kw
 end
+# Test that the
+@test occursin("runtests.jl", string(which(Action(1), Tuple{Int}).file))
 
 @test Action(2)(10) == 112
 
