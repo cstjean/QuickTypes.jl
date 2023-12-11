@@ -445,7 +445,7 @@ macro qfunctor(fdef0)
             $QuickTypes.@qstruct $type_def <: $parenttype
             $(combinedef(di))
               end)
-    res.args[1].args[2].args[2] = __source__
+    res.args[1].args[2].args[2] = __source__  # change the @qstruct's LineNumberNode †
     return res
 end
 
