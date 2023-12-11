@@ -97,6 +97,8 @@ end
 @test_throws AssertionError Foo(11; y=10.0)
 @test_throws AssertionError construct(Foo, 11, 10.0)
 
+@test is_defined_in_runtest(which(Foo, Tuple{Int}))
+
 ################################################################################
 # Fully-parametric
 

@@ -136,7 +136,7 @@ narrow_typeof(t::T) where {T} = T
 
 # Helper for @qmutable/@qstruct
 # narrow_types means that
-function qexpansion(def::Expr, mutable::Bool, fully_parametric::Bool, narrow_types::Bool)
+function qexpansion(__source__, def::Expr, mutable::Bool, fully_parametric::Bool,narrow_types::Bool)
     if !@capture(def, typ_def_ <: parent_type_)
         typ_def = def
         parent_type = :Any
@@ -226,18 +226,21 @@ function qexpansion(def::Expr, mutable::Bool, fully_parametric::Bool, narrow_typ
     else
         given_types = type_vars
     end
-    inner_constr = quote
+    inner_constr = @q begin
         function $type_with_vars($(constr_args...);
                                  $(constr_kwargs...)) where {$(type_params...)}
+            $__source__
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
     end
-    straight_constr = :($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
-                        $name{$(given_types...)}($(o_constr_args...);
-                                                 $(o_constr_kwargs...)))
+    straight_constr = @q function $name($(args...); $(reg_kwargs...)) where {$(type_vars...)}
+        $__source__
+        $name{$(given_types...)}($(o_constr_args...); $(o_constr_kwargs...))
+    end
     type_def =
-        quote
+        @q begin
+            $__source__
             Base.@__doc__ $(Expr(:struct,
                                  mutable, Expr(:<:, typ, parent_type),
                                  Expr(:block, fields..., kwfields...,
@@ -301,12 +304,12 @@ Note: `@qstruct` automatically defines a `Base.show` method for the new type,
 unless `_define_show=false` (eg. `@qstruct(x, y; _define_show=false)`).
 """
 macro qstruct(def)
-    return qexpansion(def, false, false, false)
+    return qexpansion(__source__, def, false, false, false)
 end
 
 """ Quick mutable struct definition. See ?@qstruct """
 macro qmutable(def)
-    return qexpansion(def, true, false, false)
+    return qexpansion(__source__, def, true, false, false)
 end
 
 # -----------------------------------------------------------------------------
@@ -353,12 +356,12 @@ end
 """ Fully-parametric version of `@qstruct`. `@qstruct_fp Foo(a, b=2)` is like
 `@qstruct Foo{T, U}(a::T, B::U=2)` """
 macro qstruct_fp(def)
-    return qexpansion(def, false, true, false)
+    return qexpansion(__source__, def, false, true, false)
 end
 """ Fully-parametric version of `@qmutable`. `@qmutable_fp Foo(a, b=2)` is like
 `@qmutable Foo{T, U}(a::T, B::U=2)` """
 macro qmutable_fp(def)
-    return qexpansion(def, true, true, false)
+    return qexpansion(__source__, def, true, true, false)
 end
 
 
@@ -366,10 +369,10 @@ end
 `@qstruct Foo{T, U}(a::T, B::U=2)`, but it will additionally specialize on types:
 `Foo(Int, 2.0) ==> Foo{Type{Int64},Float64}(Int64, 2.0)` """
 macro qstruct_np(def)
-    return qexpansion(def, false, true, true)
+    return qexpansion(__source__, def, false, true, true)
 end
 macro qmutable_np(def)
-    return qexpansion(def, true, true, true)
+    return qexpansion(__source__, def, true, true, true)
 end
 
 ################################################################################
