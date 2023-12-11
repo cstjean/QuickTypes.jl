@@ -140,7 +140,8 @@ convert_f(foo) = convert(foo.a, 10)
 @qfunctor function Action(a; kw=100)(x)
     return a + x + kw
 end
-@test is_defined_in_runtest(which(Action(1), Tuple{Int}))
+@test is_defined_in_runtest(which(Action, Tuple{Int}))    # constructor
+@test is_defined_in_runtest(which(Action(1), Tuple{Int}))   # call
 
 @test Action(2)(10) == 112
 

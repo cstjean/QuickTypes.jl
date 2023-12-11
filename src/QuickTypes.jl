@@ -440,10 +440,13 @@ macro qfunctor(fdef0)
             $(Expr(:tuple, Expr(:parameters, all_args...))) = __self__ # namedtuple destructuring
             $(di[:body])
         end
-    esc(quote
-        $QuickTypes.@qstruct $type_def <: $parenttype
-        $(combinedef(di))
-        end)
+    res = esc(@q begin
+            $__source__
+            $QuickTypes.@qstruct $type_def <: $parenttype
+            $(combinedef(di))
+              end)
+    res.args[1].args[2].args[2] = __source__
+    return res
 end
 
 ################################################################################
