@@ -214,3 +214,5 @@ QuickTypes.check_destructurable(::NotDestruct) = throw(MyException())
 @d dontdestruct(NotDestruct(x)) = x
 
 @test_throws MyException dontdestruct(NotDestruct(x))
+
+include("revise.jl")
