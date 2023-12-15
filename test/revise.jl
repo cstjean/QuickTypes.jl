@@ -61,3 +61,15 @@ TestModule = @eval $mod_sym
     @test TestModule.Car(10; manufacturer=("Danone", "Hershey")).nwheels == 18
     @test TestModule.Plane{Int, Symbol}(2).brand == :airbus
 end
+
+@testset "should revise content within macros" begin
+    cp_content("within-macro1.jl")
+    do_revise()
+
+    @test TestModule.modelA().p0 == 0f0
+
+    cp_content("within-macro2.jl")
+    do_revise()
+
+    @test TestModule.modelA().p0 == 22f0
+end
