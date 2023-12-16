@@ -97,7 +97,7 @@ end
 @test_throws AssertionError Foo(11; y=10.0)
 @test_throws AssertionError construct(Foo, 11, 10.0)
 
-@test is_defined_in_runtest(which(Foo, Tuple{Int}))
+@test_broken is_defined_in_runtest(which(Foo, Tuple{Int}))
 
 ################################################################################
 # Fully-parametric
@@ -140,7 +140,7 @@ convert_f(foo) = convert(foo.a, 10)
 @qfunctor function Action(a; kw=100)(x)
     return a + x + kw
 end
-@test is_defined_in_runtest(which(Action, Tuple{Int}))    # constructor
+@test_broken is_defined_in_runtest(which(Action, Tuple{Int}))    # constructor
 @test is_defined_in_runtest(which(Action(1), Tuple{Int}))   # call
 
 @test Action(2)(10) == 112

@@ -229,18 +229,15 @@ function qexpansion(__source__, def::Expr, mutable::Bool, fully_parametric::Bool
     inner_constr = @q begin
         function $type_with_vars($(constr_args...);
                                  $(constr_kwargs...)) where {$(type_params...)}
-            $__source__
             $constraints
             return new{$(type_vars...)}($(new_args...))
         end
     end
-    straight_constr = @q function $name($(args...); $(reg_kwargs...)) where {$(type_vars...)}
-        $__source__
-        $name{$(given_types...)}($(o_constr_args...); $(o_constr_kwargs...))
-    end
+    straight_constr = :($name($(args...); $(reg_kwargs...)) where {$(type_vars...)} =
+                        $name{$(given_types...)}($(o_constr_args...);
+                                                 $(o_constr_kwargs...)))
     type_def =
-        @q begin
-            $__source__
+        quote
             Base.@__doc__ $(Expr(:struct,
                                  mutable, Expr(:<:, typ, parent_type),
                                  Expr(:block, fields..., kwfields...,
