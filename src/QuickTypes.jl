@@ -423,11 +423,12 @@ macro qfunctor(fdef0)
     end
     type_def = di[:name]
     if @capture(type_def, typename_(args__; kwargs__))
-        all_args = map(first ∘ splitarg, vcat(args, kwargs))
+        all_args0 = map(first ∘ splitarg, vcat(args, kwargs))
     else
         @assert @capture(type_def, typename_(args__))
-        all_args = map(first ∘ splitarg, args)
+        all_args0 = map(first ∘ splitarg, args)
     end
+    all_args = setdiff(all_args0, special_kwargs)
     di[:name] = :(__self__::$typename)
     if @capture(type_def, tname_{Ts__}(__))
         di[:whereparams] = tuple(Ts..., get(di, :whereparams, ())...)
