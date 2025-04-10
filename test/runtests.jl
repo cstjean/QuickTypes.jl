@@ -27,7 +27,7 @@ c2 = @inferred setproperties(c, (size=42, nwheels=8))
 @test collect(fieldnames(Car)) == [:size, :nwheels, :manufacturer, :brand]
 # This is essentially the definition of these functions.
 @test construct(roottypeof(c), fieldsof(c)...) == c
-@test type_parameters(Vector{Int}) == Base.Core.svec(Int64, 1)
+@test type_parameters(Vector{Int32}) == Base.Core.svec(Int32, 1)
 @test tuple_parameters(Tuple{Int, Float64}) == Base.Core.svec(Int64, Float64)
 @inferred roottypeof(1=>2) == Pair
 
