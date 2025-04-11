@@ -129,7 +129,7 @@ o2 = @inferred setproperties(o, brand=10, nwheels=o.nwheels)
 convert_f(foo) = convert(foo.a, 10)
 @test_throws(Exception, @inferred convert_f(Foo_fp(Int, 2)))
 @inferred convert_f(Foo_np(Int, 2))
-@test fieldtype(typeof(Foo_np(Int, 2)), :a) == Type{Int64}
+@test fieldtype(typeof(Foo_np(Int, 2)), :a) == Type{Int}
 
 @qstruct Issue11(;no_default_value)
 @test_throws UndefKeywordError Issue11()
@@ -150,8 +150,8 @@ end
 @test string(ParamAction(1)) == "ParamAction{Int64}(1)"
 
 io = IOBuffer();
-show(io, MIME"text/plain"(), ParamAction(1))
-@test String(take!(io)) == "ParamAction{Int64}(1)"
+show(io, MIME"text/plain"(), ParamAction(1.0))
+@test String(take!(io)) == "ParamAction{Float64}(1)"
 
 @qfunctor Bus(x)(y) <: Real = 2
 @test Bus(2) isa Real
