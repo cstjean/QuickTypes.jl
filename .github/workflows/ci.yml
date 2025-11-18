@@ -1,8 +1,6 @@
-name: CI
+name: Run tests
+
 on:
-  pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
@@ -13,22 +11,24 @@ permissions:
   contents: read
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        version:
-          - '1.10' # the minimum Julia version that your package supports
-          - '1' # Leave this line unchanged. '1' will automatically expand to the latest stable 1.x release of Julia.
-          - 'nightly'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-   steps:
-     - uses: actions/checkout@v4
-     - uses: julia-actions/setup-julia@v2
-     - uses: julia-actions/cache@v2
-     - uses: julia-actions/julia-buildpkg@v1
-     - uses: julia-actions/julia-runtest@v1
+        julia-version: ['lts', '1', 'pre']
+        julia-arch: [x64, x86]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        exclude:
+          - os: macOS-latest
+            julia-arch: x86
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        # with:
+        #   annotate: true
